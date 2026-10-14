@@ -1,0 +1,48 @@
+[package]
+name = "twm-bible-native"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+description = "Native desktop TWM Bible reader"
+publish = false
+
+[dependencies]
+arboard = "3"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+regex = "1"
+rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+slint = "1.14"
+unicode-normalization = "0.1"
+
+[build-dependencies]
+slint-build = "1.14"
+
+[profile.release]
+lto = false
+codegen-units = 16
+strip = true
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+[package.metadata.deb]
+name = "twm-bible-native"
+maintainer = "Rocky (thunderbyrdgrok)"
+section = "text"
+priority = "optional"
+extended-description = "Native desktop TWM Bible reader built with Rust and Slint. Bundles KJV, ASV, WEB, YLT, Darby, RV, Geneva and Douay-Rheims texts."
+depends = "$auto, libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libwayland-cursor0, libegl1 | libgl1"
+recommends = "curl"
+assets = [
+    ["target/release/twm-bible-native", "usr/bin/", "755"],
+    ["data/*.json", "usr/share/twm-bible-native/data/", "644"],
+    ["packaging/linux/twm-bible-native.desktop", "usr/share/applications/", "644"],
+    ["assets/icon-256.png", "usr/share/icons/hicolor/256x256/apps/twm-bible-native.png", "644"],
+    ["assets/icon-128.png", "usr/share/icons/hicolor/128x128/apps/twm-bible-native.png", "644"],
+    ["assets/icon-48.png", "usr/share/icons/hicolor/48x48/apps/twm-bible-native.png", "644"],
+    ["assets/icon.svg", "usr/share/icons/hicolor/scalable/apps/twm-bible-native.svg", "644"],
+    ["fonts/OFL.txt", "usr/share/doc/twm-bible-native/OFL.txt", "644"],
+    ["README.md", "usr/share/doc/twm-bible-native/README.md", "644"],
+]

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Launch the native reader. This file is not ~/.local/bin/twm-bible.
+set -euo pipefail
+ROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"
+if [[ -f "$HOME/.cargo/env" ]]; then
+  # shellcheck disable=SC1091
+  source "$HOME/.cargo/env"
+fi
+export TWM_BIBLE_DATA="$ROOT/data"
+cd "$ROOT"
+BIN="$ROOT/target/release/twm-bible-native"
+needs=0
+if [[ ! -x "$BIN" ]]; then
+  needs=1
+else
+  while IFS= read -r -d '' file; do
+    if [[ "$file" -nt "$BIN" ]]; then
+      needs=1
+      break
+    fi
+  done < <(find "$ROOT/ui" "$ROOT/src" "$ROOT/fonts" "$ROOT/assets" "$ROOT/Cargo.toml" "$ROOT/build.rs" -type f -print0)
+fi
+if [[ "$needs" -eq 1 ]]; then
+  cargo build --release
+fi
+exec "$BIN"

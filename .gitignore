@@ -1,0 +1,12 @@
+/target
+/dist
+*.AppImage
+*.deb
+*.dmg
+*.msi
+*-setup.exe
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

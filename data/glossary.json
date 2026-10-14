@@ -1,0 +1,2167 @@
+{
+ "abidest": {
+  "archaic": "Older form used with thou. “Thou abidest” means “you abide.”",
+  "modern": "abide",
+  "pos": "verb"
+ },
+ "abideth": {
+  "archaic": "Older form of “abides,” used with he, she, or it.",
+  "modern": "abides",
+  "pos": "verb"
+ },
+ "abraham": {
+  "archaic": "The man God called out of Ur. Israel traces its covenant line through him.",
+  "modern": "The same person.",
+  "pos": "name"
+ },
+ "afore": {
+  "archaic": "Before, earlier.",
+  "modern": "Before.",
+  "pos": "preposition"
+ },
+ "aforetime": {
+  "archaic": "Formerly, in time past.",
+  "modern": "Formerly.",
+  "pos": "adverb"
+ },
+ "amen": {
+  "archaic": "So be it. Truly. A confirmation of what was just said.",
+  "modern": "The same word is still used to agree or to end a prayer.",
+  "pos": "adverb"
+ },
+ "anon": {
+  "archaic": "At once. Immediately.",
+  "modern": "Soon, or in a moment. The old sense is stronger: right away.",
+  "pos": "adverb"
+ },
+ "answerest": {
+  "archaic": "Older form used with thou. “Thou answerest” means “you answer.”",
+  "modern": "answer",
+  "pos": "verb"
+ },
+ "answereth": {
+  "archaic": "Older form of “answers,” used with he, she, or it.",
+  "modern": "answers",
+  "pos": "verb"
+ },
+ "art": {
+  "archaic": "Are, used with thou. “Thou art” means “you are.”",
+  "modern": "Are.",
+  "pos": "verb"
+ },
+ "askest": {
+  "archaic": "Older form used with thou. “Thou askest” means “you ask.”",
+  "modern": "ask",
+  "pos": "verb"
+ },
+ "asketh": {
+  "archaic": "Older form of “asks,” used with he, she, or it.",
+  "modern": "asks",
+  "pos": "verb"
+ },
+ "bearest": {
+  "archaic": "Older form used with thou. “Thou bearest” means “you bear.”",
+  "modern": "bear",
+  "pos": "verb"
+ },
+ "beareth": {
+  "archaic": "Older form of “bears,” used with he, she, or it.",
+  "modern": "bears",
+  "pos": "verb"
+ },
+ "behold": {
+  "archaic": "Look. Pay attention. Something worth seeing follows.",
+  "modern": "Look, or “listen.”",
+  "pos": "verb"
+ },
+ "believest": {
+  "archaic": "Older form used with thou. “Thou believest” means “you believe.”",
+  "modern": "believe",
+  "pos": "verb"
+ },
+ "believeth": {
+  "archaic": "Older form of “believes,” used with he, she, or it.",
+  "modern": "believes",
+  "pos": "verb"
+ },
+ "betimes": {
+  "archaic": "Early, or in good time.",
+  "modern": "Early.",
+  "pos": "adverb"
+ },
+ "bewray": {
+  "archaic": "To reveal, expose, or give away. “Thy speech bewrayeth thee” means your accent gives you away.",
+  "modern": "The word is obsolete. The sense is betray or reveal.",
+  "pos": "verb"
+ },
+ "bewrayeth": {
+  "archaic": "Reveals, gives away.",
+  "modern": "Reveals.",
+  "pos": "verb"
+ },
+ "blessest": {
+  "archaic": "Older form used with thou. “Thou blessest” means “you bless.”",
+  "modern": "bless",
+  "pos": "verb"
+ },
+ "blesseth": {
+  "archaic": "Older form of “blesses,” used with he, she, or it.",
+  "modern": "blesses",
+  "pos": "verb"
+ },
+ "blowest": {
+  "archaic": "Older form used with thou. “Thou blowest” means “you blow.”",
+  "modern": "blow",
+  "pos": "verb"
+ },
+ "bloweth": {
+  "archaic": "Older form of “blows,” used with he, she, or it.",
+  "modern": "blows",
+  "pos": "verb"
+ },
+ "bowels": {
+  "archaic": "The inner organs as the seat of mercy and affection. “Bowels of compassion” means a heart of compassion.",
+  "modern": "Intestines. Feelings are no longer called bowels.",
+  "pos": "noun"
+ },
+ "brass": {
+  "archaic": "Copper or bronze. The KJV does not mean the modern zinc alloy only.",
+  "modern": "An alloy of copper and zinc.",
+  "pos": "noun"
+ },
+ "breakest": {
+  "archaic": "Older form used with thou. “Thou breakest” means “you break.”",
+  "modern": "break",
+  "pos": "verb"
+ },
+ "breaketh": {
+  "archaic": "Older form of “breaks,” used with he, she, or it.",
+  "modern": "breaks",
+  "pos": "verb"
+ },
+ "bringest": {
+  "archaic": "Older form used with thou. “Thou bringest” means “you bring.”",
+  "modern": "bring",
+  "pos": "verb"
+ },
+ "bringeth": {
+  "archaic": "Older form of “brings,” used with he, she, or it.",
+  "modern": "brings",
+  "pos": "verb"
+ },
+ "buildest": {
+  "archaic": "Older form used with thou. “Thou buildest” means “you build.”",
+  "modern": "build",
+  "pos": "verb"
+ },
+ "buildeth": {
+  "archaic": "Older form of “builds,” used with he, she, or it.",
+  "modern": "builds",
+  "pos": "verb"
+ },
+ "by and by": {
+  "archaic": "Immediately. At once. In the KJV this phrase does not mean “later.”",
+  "modern": "Later, after a while.",
+  "pos": "adverb"
+ },
+ "callest": {
+  "archaic": "Older form used with thou. “Thou callest” means “you call.”",
+  "modern": "call",
+  "pos": "verb"
+ },
+ "calleth": {
+  "archaic": "Older form of “calls,” used with he, she, or it.",
+  "modern": "calls",
+  "pos": "verb"
+ },
+ "canst": {
+  "archaic": "Can, used with thou.",
+  "modern": "Can.",
+  "pos": "verb"
+ },
+ "careful": {
+  "archaic": "Anxious, full of care. “Be careful for nothing” means do not be anxious about anything.",
+  "modern": "Taking care, cautious, thorough.",
+  "pos": "adjective"
+ },
+ "carefully": {
+  "archaic": "Anxiously, or with great concern.",
+  "modern": "In a cautious, thorough way.",
+  "pos": "adverb"
+ },
+ "carriage": {
+  "archaic": "Baggage. What is carried. Not a wheeled vehicle.",
+  "modern": "A wheeled vehicle pulled by horses, or a formal way of holding oneself. The KJV sense is the load being carried.",
+  "pos": "noun"
+ },
+ "charity": {
+  "archaic": "Love, the settled goodwill of 1 Corinthians 13. Not limited to giving money.",
+  "modern": "In modern English, charity is usually help given to people in need, or an organization that does that.",
+  "pos": "noun"
+ },
+ "christ": {
+  "archaic": "Anointed one. A title, not a surname: the Messiah.",
+  "modern": "The title of Jesus, often used as part of his name.",
+  "pos": "name"
+ },
+ "comest": {
+  "archaic": "Older form used with thou. “Thou comest” means “you come.”",
+  "modern": "come",
+  "pos": "verb"
+ },
+ "cometh": {
+  "archaic": "Older form of “comes,” used with he, she, or it.",
+  "modern": "comes",
+  "pos": "verb"
+ },
+ "communicate": {
+  "archaic": "To share with someone, often goods or means. Not to talk.",
+  "modern": "To speak or write so that someone understands. Sharing goods is now usually “share.”",
+  "pos": "verb"
+ },
+ "convenient": {
+  "archaic": "Fitting, proper, suitable. “Not convenient” means not fitting.",
+  "modern": "Useful because it saves time or trouble.",
+  "pos": "adjective"
+ },
+ "conversation": {
+  "archaic": "Conduct, behavior, manner of life. “Let your conversation be as it becometh the gospel” means let your way of life fit the gospel. It does not mean a talk.",
+  "modern": "A talk between people.",
+  "pos": "noun"
+ },
+ "corn": {
+  "archaic": "Grain of any kind, such as wheat or barley. Not maize.",
+  "modern": "In American English, maize. In older and British English, grain.",
+  "pos": "noun"
+ },
+ "couldest": {
+  "archaic": "Could, used with thou.",
+  "modern": "Could.",
+  "pos": "verb"
+ },
+ "couldst": {
+  "archaic": "Could, used with thou.",
+  "modern": "Could.",
+  "pos": "verb"
+ },
+ "coverest": {
+  "archaic": "Older form used with thou. “Thou coverest” means “you cover.”",
+  "modern": "cover",
+  "pos": "verb"
+ },
+ "covereth": {
+  "archaic": "Older form of “covers,” used with he, she, or it.",
+  "modern": "covers",
+  "pos": "verb"
+ },
+ "criest": {
+  "archaic": "Older form used with thou. “Thou criest” means “you cry.”",
+  "modern": "cry",
+  "pos": "verb"
+ },
+ "crieth": {
+  "archaic": "Older form of “cries,” used with he, she, or it.",
+  "modern": "cries",
+  "pos": "verb"
+ },
+ "cunning": {
+  "archaic": "Skillful. “Cunning work” is skilled work.",
+  "modern": "Sly, deceitful. “Cunning” can still mean clever skill, with a hint of trickery.",
+  "pos": "adjective"
+ },
+ "curious": {
+  "archaic": "Carefully wrought, or, in “curious arts,” magical arts.",
+  "modern": "Eager to know.",
+  "pos": "adjective"
+ },
+ "david": {
+  "archaic": "The shepherd who became king of Israel, and the ancestor in the line promised a lasting throne.",
+  "modern": "The same person, and a common name.",
+  "pos": "name"
+ },
+ "daysman": {
+  "archaic": "An umpire, mediator, or arbitrator.",
+  "modern": "The word is obsolete. The sense is a mediator.",
+  "pos": "noun"
+ },
+ "deceivest": {
+  "archaic": "Older form used with thou. “Thou deceivest” means “you deceive.”",
+  "modern": "deceive",
+  "pos": "verb"
+ },
+ "deceiveth": {
+  "archaic": "Older form of “deceives,” used with he, she, or it.",
+  "modern": "deceives",
+  "pos": "verb"
+ },
+ "deliverest": {
+  "archaic": "Older form used with thou. “Thou deliverest” means “you deliver.”",
+  "modern": "deliver",
+  "pos": "verb"
+ },
+ "delivereth": {
+  "archaic": "Older form of “delivers,” used with he, she, or it.",
+  "modern": "delivers",
+  "pos": "verb"
+ },
+ "departest": {
+  "archaic": "Older form used with thou. “Thou departest” means “you depart.”",
+  "modern": "depart",
+  "pos": "verb"
+ },
+ "departeth": {
+  "archaic": "Older form of “departs,” used with he, she, or it.",
+  "modern": "departs",
+  "pos": "verb"
+ },
+ "didst": {
+  "archaic": "Did, used with thou.",
+  "modern": "Did.",
+  "pos": "verb"
+ },
+ "discover": {
+  "archaic": "To uncover, lay bare, or reveal. Not to find a previously unknown land.",
+  "modern": "To find something previously unknown.",
+  "pos": "verb"
+ },
+ "discovered": {
+  "archaic": "Uncovered, revealed.",
+  "modern": "Found.",
+  "pos": "verb"
+ },
+ "divers": {
+  "archaic": "Various, of different kinds. “Divers diseases” means various diseases. Not people who dive.",
+  "modern": "People who dive. The old adjective is now spelled “diverse.”",
+  "pos": "adjective"
+ },
+ "diverse": {
+  "archaic": "Various, different.",
+  "modern": "Various, different.",
+  "pos": "adjective"
+ },
+ "doctor": {
+  "archaic": "A teacher. The doctors in the temple are teachers of the law.",
+  "modern": "A physician, or someone with a doctorate.",
+  "pos": "noun"
+ },
+ "doest": {
+  "archaic": "Do, used with thou. Same pattern as dost.",
+  "modern": "Do.",
+  "pos": "verb"
+ },
+ "doeth": {
+  "archaic": "Does. Same pattern as doth.",
+  "modern": "Does.",
+  "pos": "verb"
+ },
+ "dost": {
+  "archaic": "Do, used with thou. “Thou dost” means “you do.”",
+  "modern": "Do.",
+  "pos": "verb"
+ },
+ "doth": {
+  "archaic": "Does. “He doth” means “he does.”",
+  "modern": "Does.",
+  "pos": "verb"
+ },
+ "draught": {
+  "archaic": "A catch of fish, or a drain and latrine. “Gone out into the draught” is the latrine. “A great draught of fishes” is a haul.",
+  "modern": "A current of air, a drink, or a pull. The fisherman’s haul is now a “catch.”",
+  "pos": "noun"
+ },
+ "drinkest": {
+  "archaic": "Older form used with thou. “Thou drinkest” means “you drink.”",
+  "modern": "drink",
+  "pos": "verb"
+ },
+ "drinketh": {
+  "archaic": "Older form of “drinks,” used with he, she, or it.",
+  "modern": "drinks",
+  "pos": "verb"
+ },
+ "dwellest": {
+  "archaic": "Older form used with thou. “Thou dwellest” means “you dwell.”",
+  "modern": "dwell",
+  "pos": "verb"
+ },
+ "dwelleth": {
+  "archaic": "Older form of “dwells,” used with he, she, or it.",
+  "modern": "dwells",
+  "pos": "verb"
+ },
+ "ear": {
+  "archaic": "As a verb, to plow. “Ear his ground” means plow his ground.",
+  "modern": "The organ of hearing, or the seed head of grain.",
+  "pos": "verb"
+ },
+ "earing": {
+  "archaic": "Plowing.",
+  "modern": "The formation of grain ears. The KJV noun is plowing.",
+  "pos": "noun"
+ },
+ "eatest": {
+  "archaic": "Older form used with thou. “Thou eatest” means “you eat.”",
+  "modern": "eat",
+  "pos": "verb"
+ },
+ "eateth": {
+  "archaic": "Older form of “eats,” used with he, she, or it.",
+  "modern": "eats",
+  "pos": "verb"
+ },
+ "emerods": {
+  "archaic": "Tumors. In the Philistine plague, swellings, traditionally hemorrhoids.",
+  "modern": "The modern medical word is hemorrhoids.",
+  "pos": "noun"
+ },
+ "emulations": {
+  "archaic": "Jealousies, rivalries.",
+  "modern": "Efforts to match or copy someone. The KJV sense is the bitter kind.",
+  "pos": "noun"
+ },
+ "ensue": {
+  "archaic": "To pursue or follow after.",
+  "modern": "To happen as a result.",
+  "pos": "verb"
+ },
+ "enterest": {
+  "archaic": "Older form used with thou. “Thou enterest” means “you enter.”",
+  "modern": "enter",
+  "pos": "verb"
+ },
+ "entereth": {
+  "archaic": "Older form of “enters,” used with he, she, or it.",
+  "modern": "enters",
+  "pos": "verb"
+ },
+ "entreat": {
+  "archaic": "To treat someone in a certain way, or to plead. “Entreated them evil” means treated them badly.",
+  "modern": "To plead. The sense “treat” is obsolete.",
+  "pos": "verb"
+ },
+ "ere": {
+  "archaic": "Before.",
+  "modern": "Before.",
+  "pos": "preposition"
+ },
+ "even": {
+  "archaic": "Often an intensive: namely, exactly, indeed. It also means evening, or level.",
+  "modern": "Flat, or a word that emphasizes. The “namely” sense is easy to miss.",
+  "pos": "adverb"
+ },
+ "evidently": {
+  "archaic": "Clearly, in plain sight.",
+  "modern": "Apparently, on the evidence so far. The KJV word means “clearly,” not “seemingly.”",
+  "pos": "adverb"
+ },
+ "fain": {
+  "archaic": "Gladly. “Would fain” means would gladly.",
+  "modern": "Gladly. The word is archaic.",
+  "pos": "adverb"
+ },
+ "fallest": {
+  "archaic": "Older form used with thou. “Thou fallest” means “you fall.”",
+  "modern": "fall",
+  "pos": "verb"
+ },
+ "falleth": {
+  "archaic": "Older form of “falls,” used with he, she, or it.",
+  "modern": "falls",
+  "pos": "verb"
+ },
+ "familiar": {
+  "archaic": "In “familiar spirit,” a spirit consulted by a medium. Not a close friend.",
+  "modern": "Well known, or friendly.",
+  "pos": "adjective"
+ },
+ "fearest": {
+  "archaic": "Older form used with thou. “Thou fearest” means “you fear.”",
+  "modern": "fear",
+  "pos": "verb"
+ },
+ "feareth": {
+  "archaic": "Older form of “fears,” used with he, she, or it.",
+  "modern": "fears",
+  "pos": "verb"
+ },
+ "feebleminded": {
+  "archaic": "Fainthearted, discouraged, of little courage.",
+  "modern": "A modern medical label for an intellectual disability. That is not the KJV sense. The verse means the discouraged.",
+  "pos": "adjective"
+ },
+ "feedest": {
+  "archaic": "Older form used with thou. “Thou feedest” means “you feed.”",
+  "modern": "feed",
+  "pos": "verb"
+ },
+ "feedeth": {
+  "archaic": "Older form of “feeds,” used with he, she, or it.",
+  "modern": "feeds",
+  "pos": "verb"
+ },
+ "fillest": {
+  "archaic": "Older form used with thou. “Thou fillest” means “you fill.”",
+  "modern": "fill",
+  "pos": "verb"
+ },
+ "filleth": {
+  "archaic": "Older form of “fills,” used with he, she, or it.",
+  "modern": "fills",
+  "pos": "verb"
+ },
+ "filthy lucre": {
+  "archaic": "Dishonest gain.",
+  "modern": "Dirty money.",
+  "pos": "noun"
+ },
+ "findest": {
+  "archaic": "Older form used with thou. “Thou findest” means “you find.”",
+  "modern": "find",
+  "pos": "verb"
+ },
+ "findeth": {
+  "archaic": "Older form of “finds,” used with he, she, or it.",
+  "modern": "finds",
+  "pos": "verb"
+ },
+ "firmament": {
+  "archaic": "The expanse or vault of the sky.",
+  "modern": "The sky, in older writing.",
+  "pos": "noun"
+ },
+ "flowest": {
+  "archaic": "Older form used with thou. “Thou flowest” means “you flow.”",
+  "modern": "flow",
+  "pos": "verb"
+ },
+ "floweth": {
+  "archaic": "Older form of “flows,” used with he, she, or it.",
+  "modern": "flows",
+  "pos": "verb"
+ },
+ "followest": {
+  "archaic": "Older form used with thou. “Thou followest” means “you follow.”",
+  "modern": "follow",
+  "pos": "verb"
+ },
+ "followeth": {
+  "archaic": "Older form of “follows,” used with he, she, or it.",
+  "modern": "follows",
+  "pos": "verb"
+ },
+ "forward": {
+  "archaic": "Ready, eager, zealous. Not the direction “ahead.”",
+  "modern": "Toward the front, or too bold. The KJV sense is eager and willing.",
+  "pos": "adjective"
+ },
+ "froward": {
+  "archaic": "Perverse, willfully contrary, hard to deal with.",
+  "modern": "The word has dropped out. The sense is stubbornly contrary.",
+  "pos": "adjective"
+ },
+ "ghost": {
+  "archaic": "Spirit, breath, or life. “Gave up the ghost” means died. “Holy Ghost” is the Holy Spirit. It is not a haunting.",
+  "modern": "The spirit of a dead person, or a faint trace of something.",
+  "pos": "noun"
+ },
+ "gin": {
+  "archaic": "A trap or snare.",
+  "modern": "A juniper spirit, or a machine. The KJV noun is a trap.",
+  "pos": "noun"
+ },
+ "give up the ghost": {
+  "archaic": "To die. To breathe out one’s life.",
+  "modern": "To die. “Ghost” here is the spirit or breath, not a haunting.",
+  "pos": "verb"
+ },
+ "givest": {
+  "archaic": "Older form used with thou. “Thou givest” means “you give.”",
+  "modern": "give",
+  "pos": "verb"
+ },
+ "giveth": {
+  "archaic": "Older form of “gives,” used with he, she, or it.",
+  "modern": "gives",
+  "pos": "verb"
+ },
+ "glass": {
+  "archaic": "A mirror. “Through a glass, darkly” means in a mirror, dimly.",
+  "modern": "A hard transparent material, or a drinking vessel.",
+  "pos": "noun"
+ },
+ "god": {
+  "archaic": "The true God, or a false god. Capitals in “Lord GOD” often mark the divine name YHWH.",
+  "modern": "The being worshipped as divine, or a deity.",
+  "pos": "noun"
+ },
+ "goest": {
+  "archaic": "Older form used with thou. “Thou goest” means “you go.”",
+  "modern": "go",
+  "pos": "verb"
+ },
+ "goeth": {
+  "archaic": "Older form of “goes,” used with he, she, or it.",
+  "modern": "goes",
+  "pos": "verb"
+ },
+ "goodman": {
+  "archaic": "The master of a house.",
+  "modern": "The word is obsolete. It means the householder.",
+  "pos": "noun"
+ },
+ "growest": {
+  "archaic": "Older form used with thou. “Thou growest” means “you grow.”",
+  "modern": "grow",
+  "pos": "verb"
+ },
+ "groweth": {
+  "archaic": "Older form of “grows,” used with he, she, or it.",
+  "modern": "grows",
+  "pos": "verb"
+ },
+ "habergeon": {
+  "archaic": "A coat of mail covering the neck and chest.",
+  "modern": "The word is obsolete. It is a piece of armor.",
+  "pos": "noun"
+ },
+ "hadst": {
+  "archaic": "Had, used with thou.",
+  "modern": "Had.",
+  "pos": "verb"
+ },
+ "hale": {
+  "archaic": "To haul or drag by force.",
+  "modern": "Healthy, or (in weather) a storm of frozen rain. The KJV verb means drag.",
+  "pos": "verb"
+ },
+ "halt": {
+  "archaic": "To limp, or to stand uncertain between two choices. “Halt ye between two opinions” means you limp between them.",
+  "modern": "To stop. The KJV verb is about limping.",
+  "pos": "verb"
+ },
+ "haply": {
+  "archaic": "Perhaps, or by chance.",
+  "modern": "Perhaps.",
+  "pos": "adverb"
+ },
+ "harness": {
+  "archaic": "Armor. “Gird on his harness” means put on his armor.",
+  "modern": "Straps and fittings for a horse, or a safety strap.",
+  "pos": "noun"
+ },
+ "hast": {
+  "archaic": "Have, used with thou. “Thou hast” means “you have.”",
+  "modern": "Have.",
+  "pos": "verb"
+ },
+ "hatest": {
+  "archaic": "Older form used with thou. “Thou hatest” means “you hate.”",
+  "modern": "hate",
+  "pos": "verb"
+ },
+ "hateth": {
+  "archaic": "Older form of “hates,” used with he, she, or it.",
+  "modern": "hates",
+  "pos": "verb"
+ },
+ "hath": {
+  "archaic": "Has. “He hath” means “he has.”",
+  "modern": "Has.",
+  "pos": "verb"
+ },
+ "heady": {
+  "archaic": "Reckless, headstrong.",
+  "modern": "Intoxicating, of a drink. The KJV sense is reckless.",
+  "pos": "adjective"
+ },
+ "hearest": {
+  "archaic": "Older form used with thou. “Thou hearest” means “you hear.”",
+  "modern": "hear",
+  "pos": "verb"
+ },
+ "heareth": {
+  "archaic": "Older form of “hears,” used with he, she, or it.",
+  "modern": "hears",
+  "pos": "verb"
+ },
+ "help meet": {
+  "archaic": "A helper suited to the person. “Meet” means fitting. The two words are not the later noun “helpmeet.”",
+  "modern": "A suitable helper.",
+  "pos": "noun"
+ },
+ "hence": {
+  "archaic": "From this place, or for this reason.",
+  "modern": "From here.",
+  "pos": "adverb"
+ },
+ "hidest": {
+  "archaic": "Older form used with thou. “Thou hidest” means “you hide.”",
+  "modern": "hide",
+  "pos": "verb"
+ },
+ "hideth": {
+  "archaic": "Older form of “hides,” used with he, she, or it.",
+  "modern": "hides",
+  "pos": "verb"
+ },
+ "his": {
+  "archaic": "Often “its.” The KJV uses his for things as well as for males. “If the salt have lost his savour” means if the salt has lost its taste.",
+  "modern": "Belonging to a male. Modern English uses “its” for a thing.",
+  "pos": "pronoun"
+ },
+ "hither": {
+  "archaic": "To this place.",
+  "modern": "Here.",
+  "pos": "adverb"
+ },
+ "holpen": {
+  "archaic": "Helped. An old past participle.",
+  "modern": "Helped.",
+  "pos": "verb"
+ },
+ "holy ghost": {
+  "archaic": "The Holy Spirit.",
+  "modern": "The Holy Spirit. “Ghost” is the older English word for spirit.",
+  "pos": "name"
+ },
+ "honest": {
+  "archaic": "Honorable, noble, decent. “Honest” in the KJV is about what is worthy of respect, not only about telling the truth.",
+  "modern": "Truthful, not cheating.",
+  "pos": "adjective"
+ },
+ "hopest": {
+  "archaic": "Older form used with thou. “Thou hopest” means “you hope.”",
+  "modern": "hope",
+  "pos": "verb"
+ },
+ "hopeth": {
+  "archaic": "Older form of “hopes,” used with he, she, or it.",
+  "modern": "hopes",
+  "pos": "verb"
+ },
+ "howbeit": {
+  "archaic": "However. Nevertheless.",
+  "modern": "However.",
+  "pos": "adverb"
+ },
+ "husbandman": {
+  "archaic": "A farmer.",
+  "modern": "The word is obsolete. The sense is farmer.",
+  "pos": "noun"
+ },
+ "husbandry": {
+  "archaic": "Farming, or the care of a field.",
+  "modern": "Farming.",
+  "pos": "noun"
+ },
+ "imagine": {
+  "archaic": "To plot or devise, often something empty or hostile. “Imagine a vain thing” means plot an empty scheme.",
+  "modern": "To form a picture in the mind.",
+  "pos": "verb"
+ },
+ "instant": {
+  "archaic": "Urgent, pressing, persistent. “Continuing instant in prayer” means persisting in prayer.",
+  "modern": "A moment. As an adjective, “instant” now means immediate.",
+  "pos": "adjective"
+ },
+ "instantly": {
+  "archaic": "Urgently, earnestly, persistently.",
+  "modern": "At once.",
+  "pos": "adverb"
+ },
+ "intreat": {
+  "archaic": "To plead, or to treat. An older spelling of entreat.",
+  "modern": "Plead. Spelled “entreat” now.",
+  "pos": "verb"
+ },
+ "israel": {
+  "archaic": "The name given to Jacob, and then the people descended from him.",
+  "modern": "The people, the ancient kingdom, and the modern country.",
+  "pos": "name"
+ },
+ "issue": {
+  "archaic": "A discharge from the body, or offspring. “No issue” can mean no children.",
+  "modern": "A topic, an edition, or a problem. The medical and family senses are now specialized.",
+  "pos": "noun"
+ },
+ "jehovah": {
+  "archaic": "A rendering of the divine name YHWH, using the consonants of that name with the vowels of Adonai.",
+  "modern": "The same traditional rendering of the divine name.",
+  "pos": "name"
+ },
+ "jerusalem": {
+  "archaic": "The city of David and the temple.",
+  "modern": "The same city.",
+  "pos": "name"
+ },
+ "jesus": {
+  "archaic": "The name of Jesus of Nazareth, whom the New Testament confesses as the Christ. The name is the Greek form of Joshua, “YHWH saves.”",
+  "modern": "The same name.",
+  "pos": "name"
+ },
+ "judgest": {
+  "archaic": "Older form used with thou. “Thou judgest” means “you judge.”",
+  "modern": "judge",
+  "pos": "verb"
+ },
+ "judgeth": {
+  "archaic": "Older form of “judges,” used with he, she, or it.",
+  "modern": "judges",
+  "pos": "verb"
+ },
+ "keepest": {
+  "archaic": "Older form used with thou. “Thou keepest” means “you keep.”",
+  "modern": "keep",
+  "pos": "verb"
+ },
+ "keepeth": {
+  "archaic": "Older form of “keeps,” used with he, she, or it.",
+  "modern": "keeps",
+  "pos": "verb"
+ },
+ "killest": {
+  "archaic": "Older form used with thou. “Thou killest” means “you kill.”",
+  "modern": "kill",
+  "pos": "verb"
+ },
+ "killeth": {
+  "archaic": "Older form of “kills,” used with he, she, or it.",
+  "modern": "kills",
+  "pos": "verb"
+ },
+ "kine": {
+  "archaic": "Cows.",
+  "modern": "The word is obsolete. It means cattle.",
+  "pos": "noun"
+ },
+ "knowest": {
+  "archaic": "Older form used with thou. “Thou knowest” means “you know.”",
+  "modern": "know",
+  "pos": "verb"
+ },
+ "knoweth": {
+  "archaic": "Older form of “knows,” used with he, she, or it.",
+  "modern": "knows",
+  "pos": "verb"
+ },
+ "latchet": {
+  "archaic": "The thong of a sandal.",
+  "modern": "The word is obsolete. It is a sandal strap.",
+  "pos": "noun"
+ },
+ "lawyer": {
+  "archaic": "An expert in the law of Moses.",
+  "modern": "An attorney.",
+  "pos": "noun"
+ },
+ "leadest": {
+  "archaic": "Older form used with thou. “Thou leadest” means “you lead.”",
+  "modern": "lead",
+  "pos": "verb"
+ },
+ "leadeth": {
+  "archaic": "Older form of “leads,” used with he, she, or it.",
+  "modern": "leads",
+  "pos": "verb"
+ },
+ "leasing": {
+  "archaic": "Lying. Falsehood. “Lying lips” is the sense of “leasing.”",
+  "modern": "A rental contract. The KJV noun is an old word for falsehood.",
+  "pos": "noun"
+ },
+ "lest": {
+  "archaic": "For fear that. So that something will not happen.",
+  "modern": "Still used, though less often: “so that … not.”",
+  "pos": "conjunction"
+ },
+ "let": {
+  "archaic": "Often to hinder or hold back. “He who now letteth” is the one who restrains. In other verses “let” already means to allow, as it does today. The sentence shows which sense is meant.",
+  "modern": "To allow.",
+  "pos": "verb"
+ },
+ "letteth": {
+  "archaic": "Hinders, restrains. Older -eth form of let in the sense “hold back.”",
+  "modern": "Hinders. Modern “lets” usually means allows.",
+  "pos": "verb"
+ },
+ "liest": {
+  "archaic": "Older form used with thou. “Thou liest” means “you lie.”",
+  "modern": "lie",
+  "pos": "verb"
+ },
+ "lieth": {
+  "archaic": "Older form of “lies,” used with he, she, or it.",
+  "modern": "lies",
+  "pos": "verb"
+ },
+ "lightness": {
+  "archaic": "Fickleness, lack of seriousness.",
+  "modern": "The quality of having little weight, or illumination.",
+  "pos": "noun"
+ },
+ "list": {
+  "archaic": "To want, wish, or choose. “The wind bloweth where it listeth” means the wind blows where it pleases.",
+  "modern": "A series of items. The verb “list” meaning “wish” is obsolete.",
+  "pos": "verb"
+ },
+ "listeth": {
+  "archaic": "Wishes, pleases, chooses. “Where it listeth” means “where it wishes.”",
+  "modern": "Lists, in the modern sense of making a list, is a different word.",
+  "pos": "verb"
+ },
+ "livest": {
+  "archaic": "Older form used with thou. “Thou livest” means “you live.”",
+  "modern": "live",
+  "pos": "verb"
+ },
+ "liveth": {
+  "archaic": "Older form of “lives,” used with he, she, or it.",
+  "modern": "lives",
+  "pos": "verb"
+ },
+ "lo": {
+  "archaic": "Look. An exclamation that points at what follows.",
+  "modern": "Look.",
+  "pos": "adverb"
+ },
+ "lord": {
+  "archaic": "A master, or a title of God. When the KJV prints LORD in capitals, it stands for the divine name YHWH rather than the title Adonai.",
+  "modern": "A titled man, or a master. In Christian use, a title of God and of Jesus.",
+  "pos": "noun"
+ },
+ "lovest": {
+  "archaic": "Older form used with thou. “Thou lovest” means “you love.”",
+  "modern": "love",
+  "pos": "verb"
+ },
+ "loveth": {
+  "archaic": "Older form of “loves,” used with he, she, or it.",
+  "modern": "loves",
+  "pos": "verb"
+ },
+ "lucre": {
+  "archaic": "Gain, profit. “Filthy lucre” is dishonest gain.",
+  "modern": "Money, especially when the speaker disapproves of it.",
+  "pos": "noun"
+ },
+ "lunatick": {
+  "archaic": "A person with seizures. The word comes from an old belief that the moon caused the illness.",
+  "modern": "The modern description is a person who has seizures, or an epileptic person. “Lunatic” is now an insult and is not a medical term.",
+  "pos": "noun"
+ },
+ "lust": {
+  "archaic": "A strong desire, good or bad. Not limited to sexual desire. “The lust of the flesh” is the pull of one’s own appetites.",
+  "modern": "Usually a sexual desire. The wider sense “strong appetite” is now rare.",
+  "pos": "noun"
+ },
+ "makest": {
+  "archaic": "Older form used with thou. “Thou makest” means “you make.”",
+  "modern": "make",
+  "pos": "verb"
+ },
+ "maketh": {
+  "archaic": "Older form of “makes,” used with he, she, or it.",
+  "modern": "makes",
+  "pos": "verb"
+ },
+ "mansion": {
+  "archaic": "A dwelling place, a place to stay. “Many mansions” means many rooms or abiding places.",
+  "modern": "A large, grand house.",
+  "pos": "noun"
+ },
+ "mary": {
+  "archaic": "A name borne by several women in the Gospels, including Jesus’ mother and Mary Magdalene. The verse shows which one.",
+  "modern": "A common name. In the Bible, which Mary is meant depends on the verse.",
+  "pos": "name"
+ },
+ "matrix": {
+  "archaic": "The womb.",
+  "modern": "A surrounding substance, or a rectangular array. The anatomical sense is obsolete.",
+  "pos": "noun"
+ },
+ "mayest": {
+  "archaic": "May, used with thou.",
+  "modern": "May.",
+  "pos": "verb"
+ },
+ "mean": {
+  "archaic": "Common, humble, of low rank or small account. “Mean men” are men of low station.",
+  "modern": "Unkind, or average. The KJV adjective is about low status.",
+  "pos": "adjective"
+ },
+ "meat": {
+  "archaic": "Food in general, not only animal flesh. “It shall be for meat” means it shall be food.",
+  "modern": "The flesh of an animal used as food.",
+  "pos": "noun"
+ },
+ "meet": {
+  "archaic": "Fitting, suitable, right for the purpose. “An help meet for him” is a helper suited to him. It is not a meeting, and “help meet” is two words.",
+  "modern": "To encounter, or a gathering. “Meet” meaning “fitting” survives in “meet the need” only weakly. The usual modern word is “suitable.”",
+  "pos": "adjective"
+ },
+ "messiah": {
+  "archaic": "The anointed king whom the Scriptures promise.",
+  "modern": "The same title. Christians use it of Jesus. Judaism still looks for the Messiah.",
+  "pos": "name"
+ },
+ "mete": {
+  "archaic": "To measure.",
+  "modern": "To measure. Rare outside “mete out.”",
+  "pos": "verb"
+ },
+ "mightest": {
+  "archaic": "Might, used with thou.",
+  "modern": "Might.",
+  "pos": "verb"
+ },
+ "minister": {
+  "archaic": "A servant, or to serve. Not limited to ordained clergy.",
+  "modern": "A member of the clergy, or a government official. The verb “minister” still means to care for someone.",
+  "pos": "noun"
+ },
+ "mischief": {
+  "archaic": "Harm, injury, an evil deed.",
+  "modern": "Playful trouble. The KJV word is real harm.",
+  "pos": "noun"
+ },
+ "moderation": {
+  "archaic": "Gentleness, forbearance, reasonableness. “Let your moderation be known” means let your gentleness be evident.",
+  "modern": "Avoiding excess. The KJV sense is closer to gentleness.",
+  "pos": "noun"
+ },
+ "moses": {
+  "archaic": "The prophet who led Israel out of Egypt and through whom the law was given.",
+  "modern": "The same person.",
+  "pos": "name"
+ },
+ "mote": {
+  "archaic": "A speck of dust or straw.",
+  "modern": "A speck.",
+  "pos": "noun"
+ },
+ "munition": {
+  "archaic": "A fortress or stronghold.",
+  "modern": "Military weapons and ammunition.",
+  "pos": "noun"
+ },
+ "naught": {
+  "archaic": "Nothing, or wickedness. “Set at nought” means treated as nothing.",
+  "modern": "Nothing. The spelling “nought” is the usual modern form for zero.",
+  "pos": "noun"
+ },
+ "naughty": {
+  "archaic": "Worthless or wicked. “Naughty figs” are bad figs.",
+  "modern": "Badly behaved, usually of a child. The word is now mild.",
+  "pos": "adjective"
+ },
+ "nay": {
+  "archaic": "No. Sometimes “indeed” when correcting a weaker word.",
+  "modern": "No.",
+  "pos": "adverb"
+ },
+ "needs": {
+  "archaic": "Necessarily. “Must needs” means “has to.”",
+  "modern": "The phrase “must needs” is obsolete. Modern English says “must” or “has to.”",
+  "pos": "adverb"
+ },
+ "nephew": {
+  "archaic": "A grandson or other descendant, not specifically a sibling’s son.",
+  "modern": "The son of one’s brother or sister.",
+  "pos": "noun"
+ },
+ "nephews": {
+  "archaic": "Descendants or grandchildren.",
+  "modern": "The sons of one’s siblings.",
+  "pos": "noun"
+ },
+ "nigh": {
+  "archaic": "Near.",
+  "modern": "Near.",
+  "pos": "adverb"
+ },
+ "noised": {
+  "archaic": "Reported, spread as news. “It was noised” means it was reported.",
+  "modern": "Made a noise.",
+  "pos": "verb"
+ },
+ "noisome": {
+  "archaic": "Harmful, destructive, foul. “Noisome pestilence” is a deadly plague. It has nothing to do with noise.",
+  "modern": "The word is rare now. It means offensive or harmful, not noisy.",
+  "pos": "adjective"
+ },
+ "nought": {
+  "archaic": "Nothing.",
+  "modern": "Nothing, or zero.",
+  "pos": "noun"
+ },
+ "occupy": {
+  "archaic": "To trade, do business, or be busy at a task. “Occupy till I come” means do business until I come.",
+  "modern": "To fill a place, or to take over a place. The commercial sense is now “be occupied with.”",
+  "pos": "verb"
+ },
+ "of": {
+  "archaic": "Often “from” or “by.” “Baptized of him” means baptized by him. “Jesus of Nazareth” is the familiar “from Nazareth.”",
+  "modern": "Belonging to, or connected with.",
+  "pos": "preposition"
+ },
+ "openest": {
+  "archaic": "Older form used with thou. “Thou openest” means “you open.”",
+  "modern": "open",
+  "pos": "verb"
+ },
+ "openeth": {
+  "archaic": "Older form of “opens,” used with he, she, or it.",
+  "modern": "opens",
+  "pos": "verb"
+ },
+ "ouches": {
+  "archaic": "Settings or sockets for gems.",
+  "modern": "The word is obsolete. It means jewel settings.",
+  "pos": "noun"
+ },
+ "outlandish": {
+  "archaic": "Foreign. From outside the land.",
+  "modern": "Bizarre, wildly strange.",
+  "pos": "adjective"
+ },
+ "passest": {
+  "archaic": "Older form used with thou. “Thou passest” means “you pass.”",
+  "modern": "pass",
+  "pos": "verb"
+ },
+ "passeth": {
+  "archaic": "Older form of “passes,” used with he, she, or it.",
+  "modern": "passes",
+  "pos": "verb"
+ },
+ "passion": {
+  "archaic": "Suffering. “After his passion” means after his suffering and death.",
+  "modern": "A strong feeling, or romantic desire.",
+  "pos": "noun"
+ },
+ "paul": {
+  "archaic": "The apostle to the Gentiles, formerly Saul of Tarsus.",
+  "modern": "The same person, and a common name.",
+  "pos": "name"
+ },
+ "peculiar": {
+  "archaic": "One’s own special possession. A “peculiar people” is a people belonging to God in a special way, not an odd people.",
+  "modern": "Strange or unusual.",
+  "pos": "adjective"
+ },
+ "peradventure": {
+  "archaic": "Perhaps. It may be.",
+  "modern": "Perhaps.",
+  "pos": "adverb"
+ },
+ "perceivest": {
+  "archaic": "Older form used with thou. “Thou perceivest” means “you perceive.”",
+  "modern": "perceive",
+  "pos": "verb"
+ },
+ "perceiveth": {
+  "archaic": "Older form of “perceives,” used with he, she, or it.",
+  "modern": "perceives",
+  "pos": "verb"
+ },
+ "perchance": {
+  "archaic": "Perhaps.",
+  "modern": "Perhaps.",
+  "pos": "adverb"
+ },
+ "person": {
+  "archaic": "In “respecter of persons,” the outward face or rank by which people show partiality. God is no respecter of persons means God does not play favorites.",
+  "modern": "An individual human being.",
+  "pos": "noun"
+ },
+ "peter": {
+  "archaic": "Simon, whom Jesus called Peter, one of the twelve.",
+  "modern": "The same person, and a common name.",
+  "pos": "name"
+ },
+ "pharaoh": {
+  "archaic": "The title of the king of Egypt.",
+  "modern": "The same title.",
+  "pos": "name"
+ },
+ "pitiful": {
+  "archaic": "Full of pity. Compassionate.",
+  "modern": "Pathetically small or inadequate.",
+  "pos": "adjective"
+ },
+ "plantest": {
+  "archaic": "Older form used with thou. “Thou plantest” means “you plant.”",
+  "modern": "plant",
+  "pos": "verb"
+ },
+ "planteth": {
+  "archaic": "Older form of “plants,” used with he, she, or it.",
+  "modern": "plants",
+  "pos": "verb"
+ },
+ "poll": {
+  "archaic": "To cut the hair of the head.",
+  "modern": "A survey of opinion, or a voting place.",
+  "pos": "verb"
+ },
+ "post": {
+  "archaic": "A runner or courier.",
+  "modern": "Mail, a pole, or a position. The KJV noun is a messenger who runs.",
+  "pos": "noun"
+ },
+ "power": {
+  "archaic": "Authority, or a body of soldiers, as well as strength.",
+  "modern": "Strength, or electrical energy. “The powers that be” still means the authorities.",
+  "pos": "noun"
+ },
+ "praisest": {
+  "archaic": "Older form used with thou. “Thou praisest” means “you praise.”",
+  "modern": "praise",
+  "pos": "verb"
+ },
+ "praiseth": {
+  "archaic": "Older form of “praises,” used with he, she, or it.",
+  "modern": "praises",
+  "pos": "verb"
+ },
+ "prayest": {
+  "archaic": "Older form used with thou. “Thou prayest” means “you pray.”",
+  "modern": "pray",
+  "pos": "verb"
+ },
+ "prayeth": {
+  "archaic": "Older form of “prays,” used with he, she, or it.",
+  "modern": "prays",
+  "pos": "verb"
+ },
+ "prefer": {
+  "archaic": "To put forward, promote, or give higher regard. “Preferring one another” means putting others ahead of yourself.",
+  "modern": "To like one option more than another.",
+  "pos": "verb"
+ },
+ "presently": {
+  "archaic": "At once. Immediately. “Presently” in the KJV does not mean “after a while.”",
+  "modern": "Soon, but not right this second.",
+  "pos": "adverb"
+ },
+ "prevent": {
+  "archaic": "To go before, come before, or meet. “I prevented the dawning” means I was up before dawn. “Shall not prevent” means shall not precede. It does not mean to stop something.",
+  "modern": "To stop something from happening.",
+  "pos": "verb"
+ },
+ "pricks": {
+  "archaic": "Goads, pointed sticks used to drive cattle. “Kick against the pricks” means to fight the goad.",
+  "modern": "A puncture, or a sharp sensation. The farm tool is now a goad.",
+  "pos": "noun"
+ },
+ "privily": {
+  "archaic": "Secretly, privately.",
+  "modern": "Secretly.",
+  "pos": "adverb"
+ },
+ "proceedest": {
+  "archaic": "Older form used with thou. “Thou proceedest” means “you proceed.”",
+  "modern": "proceed",
+  "pos": "verb"
+ },
+ "proceedeth": {
+  "archaic": "Older form of “proceeds,” used with he, she, or it.",
+  "modern": "proceeds",
+  "pos": "verb"
+ },
+ "prove": {
+  "archaic": "To test, try, or find out by testing. “Prove all things” means test everything.",
+  "modern": "To show that something is true. The sense “test” survives in “prove the dough” and “the proof of the pudding.”",
+  "pos": "verb"
+ },
+ "publican": {
+  "archaic": "A tax collector for the Roman authorities.",
+  "modern": "In Britain, the keeper of a public house. The KJV word is a tax collector.",
+  "pos": "noun"
+ },
+ "purchase": {
+  "archaic": "To gain or obtain, not only to buy with money.",
+  "modern": "To buy.",
+  "pos": "verb"
+ },
+ "quick": {
+  "archaic": "Alive, living. “The quick and the dead” means the living and the dead.",
+  "modern": "Fast. The old sense “alive” survives in “the quick and the dead” and in “cut to the quick.”",
+  "pos": "adjective"
+ },
+ "quicken": {
+  "archaic": "To make alive, or to give life.",
+  "modern": "To speed something up. The biblical sense is to give life.",
+  "pos": "verb"
+ },
+ "quickened": {
+  "archaic": "Made alive.",
+  "modern": "Sped up, or made alive in older writing.",
+  "pos": "verb"
+ },
+ "ravin": {
+  "archaic": "To tear prey, or the violence of a beast seizing prey.",
+  "modern": "The word is obsolete. The sense is tearing prey.",
+  "pos": "verb"
+ },
+ "reapest": {
+  "archaic": "Older form used with thou. “Thou reapest” means “you reap.”",
+  "modern": "reap",
+  "pos": "verb"
+ },
+ "reapeth": {
+  "archaic": "Older form of “reaps,” used with he, she, or it.",
+  "modern": "reaps",
+  "pos": "verb"
+ },
+ "receivest": {
+  "archaic": "Older form used with thou. “Thou receivest” means “you receive.”",
+  "modern": "receive",
+  "pos": "verb"
+ },
+ "receiveth": {
+  "archaic": "Older form of “receives,” used with he, she, or it.",
+  "modern": "receives",
+  "pos": "verb"
+ },
+ "record": {
+  "archaic": "To bear witness. “I call to record” means I call as witness.",
+  "modern": "A stored account of events, or to set something down.",
+  "pos": "verb"
+ },
+ "rehearse": {
+  "archaic": "To tell, recount, or declare.",
+  "modern": "To practice a performance.",
+  "pos": "verb"
+ },
+ "reignest": {
+  "archaic": "Older form used with thou. “Thou reignest” means “you reign.”",
+  "modern": "reign",
+  "pos": "verb"
+ },
+ "reigneth": {
+  "archaic": "Older form of “reigns,” used with he, she, or it.",
+  "modern": "reigns",
+  "pos": "verb"
+ },
+ "reins": {
+  "archaic": "The kidneys, treated as the seat of feeling and inner thought. “Try the reins” means test the inner person.",
+  "modern": "Straps used to guide a horse. The anatomical sense is obsolete.",
+  "pos": "noun"
+ },
+ "rejoicest": {
+  "archaic": "Older form used with thou. “Thou rejoicest” means “you rejoice.”",
+  "modern": "rejoice",
+  "pos": "verb"
+ },
+ "rejoiceth": {
+  "archaic": "Older form of “rejoices,” used with he, she, or it.",
+  "modern": "rejoices",
+  "pos": "verb"
+ },
+ "repentest": {
+  "archaic": "Older form used with thou. “Thou repentest” means “you repent.”",
+  "modern": "repent",
+  "pos": "verb"
+ },
+ "repenteth": {
+  "archaic": "Older form of “repents,” used with he, she, or it.",
+  "modern": "repents",
+  "pos": "verb"
+ },
+ "restest": {
+  "archaic": "Older form used with thou. “Thou restest” means “you rest.”",
+  "modern": "rest",
+  "pos": "verb"
+ },
+ "resteth": {
+  "archaic": "Older form of “rests,” used with he, she, or it.",
+  "modern": "rests",
+  "pos": "verb"
+ },
+ "returnest": {
+  "archaic": "Older form used with thou. “Thou returnest” means “you return.”",
+  "modern": "return",
+  "pos": "verb"
+ },
+ "returneth": {
+  "archaic": "Older form of “returns,” used with he, she, or it.",
+  "modern": "returns",
+  "pos": "verb"
+ },
+ "ringstraked": {
+  "archaic": "Streaked, banded with rings of color.",
+  "modern": "The word is obsolete. It means streaked.",
+  "pos": "adjective"
+ },
+ "riotous": {
+  "archaic": "Wasteful, loose, given to excess. “Riotous living” is squandered, dissolute living.",
+  "modern": "Violent and disorderly.",
+  "pos": "adjective"
+ },
+ "risest": {
+  "archaic": "Older form used with thou. “Thou risest” means “you rise.”",
+  "modern": "rise",
+  "pos": "verb"
+ },
+ "riseth": {
+  "archaic": "Older form of “rises,” used with he, she, or it.",
+  "modern": "rises",
+  "pos": "verb"
+ },
+ "room": {
+  "archaic": "A place or position. “The highest room” is the highest seat, not necessarily a chamber of a house.",
+  "modern": "A chamber in a building. The sense “space” or “place” still exists.",
+  "pos": "noun"
+ },
+ "rulest": {
+  "archaic": "Older form used with thou. “Thou rulest” means “you rule.”",
+  "modern": "rule",
+  "pos": "verb"
+ },
+ "ruleth": {
+  "archaic": "Older form of “rules,” used with he, she, or it.",
+  "modern": "rules",
+  "pos": "verb"
+ },
+ "runnest": {
+  "archaic": "Older form used with thou. “Thou runnest” means “you run.”",
+  "modern": "run",
+  "pos": "verb"
+ },
+ "runneth": {
+  "archaic": "Older form of “runs,” used with he, she, or it.",
+  "modern": "runs",
+  "pos": "verb"
+ },
+ "saidst": {
+  "archaic": "Said, used with thou.",
+  "modern": "Said.",
+  "pos": "verb"
+ },
+ "saith": {
+  "archaic": "Says. “Jesus saith” means “Jesus says.”",
+  "modern": "Says.",
+  "pos": "verb"
+ },
+ "satan": {
+  "archaic": "The adversary. The accuser who opposes God.",
+  "modern": "The same figure.",
+  "pos": "name"
+ },
+ "save": {
+  "archaic": "As a preposition, except: “save one” means “except one.” As a verb, to rescue, deliver, or preserve.",
+  "modern": "Except, when it is a preposition. As a verb, to rescue.",
+  "pos": "preposition"
+ },
+ "savest": {
+  "archaic": "Older form used with thou. “Thou savest” means “you save.”",
+  "modern": "save",
+  "pos": "verb"
+ },
+ "saveth": {
+  "archaic": "Older form of “saves,” used with he, she, or it.",
+  "modern": "saves",
+  "pos": "verb"
+ },
+ "sayest": {
+  "archaic": "Say, used with thou. “Thou sayest” means “you say.”",
+  "modern": "Say.",
+  "pos": "verb"
+ },
+ "science": {
+  "archaic": "Knowledge.",
+  "modern": "The systematic study of the natural world.",
+  "pos": "noun"
+ },
+ "scrip": {
+  "archaic": "A small bag or traveler’s purse.",
+  "modern": "A written note, a prescription, or a scrap of paper. The KJV word is a bag.",
+  "pos": "noun"
+ },
+ "seekest": {
+  "archaic": "Older form used with thou. “Thou seekest” means “you seek.”",
+  "modern": "seek",
+  "pos": "verb"
+ },
+ "seeketh": {
+  "archaic": "Older form of “seeks,” used with he, she, or it.",
+  "modern": "seeks",
+  "pos": "verb"
+ },
+ "seest": {
+  "archaic": "Older form used with thou. “Thou seest” means “you see.”",
+  "modern": "see",
+  "pos": "verb"
+ },
+ "seeth": {
+  "archaic": "Older form of “sees,” used with he, she, or it.",
+  "modern": "sees",
+  "pos": "verb"
+ },
+ "seethe": {
+  "archaic": "To boil.",
+  "modern": "To be inwardly furious. The cooking sense is now “boil.”",
+  "pos": "verb"
+ },
+ "selah": {
+  "archaic": "A mark in the Psalms, probably a musical pause or a lift of the voice. The exact meaning is uncertain.",
+  "modern": "The same liturgical mark. It is not an ordinary English word.",
+  "pos": "noun"
+ },
+ "sendest": {
+  "archaic": "Older form used with thou. “Thou sendest” means “you send.”",
+  "modern": "send",
+  "pos": "verb"
+ },
+ "sendeth": {
+  "archaic": "Older form of “sends,” used with he, she, or it.",
+  "modern": "sends",
+  "pos": "verb"
+ },
+ "servest": {
+  "archaic": "Older form used with thou. “Thou servest” means “you serve.”",
+  "modern": "serve",
+  "pos": "verb"
+ },
+ "serveth": {
+  "archaic": "Older form of “serves,” used with he, she, or it.",
+  "modern": "serves",
+  "pos": "verb"
+ },
+ "several": {
+  "archaic": "Separate, individual, each one’s own. “Several ability” means each person’s own ability.",
+  "modern": "More than two, but not many.",
+  "pos": "adjective"
+ },
+ "severally": {
+  "archaic": "Each one, individually.",
+  "modern": "Separately. The word is uncommon now.",
+  "pos": "adverb"
+ },
+ "shalt": {
+  "archaic": "Shall, used with thou. “Thou shalt” means “you shall.”",
+  "modern": "Shall.",
+  "pos": "verb"
+ },
+ "shamefacedness": {
+  "archaic": "Modesty.",
+  "modern": "The word is obsolete. The sense is modesty.",
+  "pos": "noun"
+ },
+ "shew": {
+  "archaic": "Show. An older spelling.",
+  "modern": "Show.",
+  "pos": "verb"
+ },
+ "shewed": {
+  "archaic": "Showed.",
+  "modern": "Showed.",
+  "pos": "verb"
+ },
+ "shewest": {
+  "archaic": "Older form used with thou. “Thou shewest” means “you show.”",
+  "modern": "show",
+  "pos": "verb"
+ },
+ "sheweth": {
+  "archaic": "Older form of “shows,” used with he, she, or it.",
+  "modern": "shows",
+  "pos": "verb"
+ },
+ "shewn": {
+  "archaic": "Shown.",
+  "modern": "Shown.",
+  "pos": "verb"
+ },
+ "shinest": {
+  "archaic": "Older form used with thou. “Thou shinest” means “you shine.”",
+  "modern": "shine",
+  "pos": "verb"
+ },
+ "shineth": {
+  "archaic": "Older form of “shines,” used with he, she, or it.",
+  "modern": "shines",
+  "pos": "verb"
+ },
+ "shouldest": {
+  "archaic": "Should, used with thou.",
+  "modern": "Should.",
+  "pos": "verb"
+ },
+ "shouldst": {
+  "archaic": "Should, used with thou.",
+  "modern": "Should.",
+  "pos": "verb"
+ },
+ "showest": {
+  "archaic": "Older form used with thou. “Thou showest” means “you show.”",
+  "modern": "show",
+  "pos": "verb"
+ },
+ "showeth": {
+  "archaic": "Older form of “shows,” used with he, she, or it.",
+  "modern": "shows",
+  "pos": "verb"
+ },
+ "simple": {
+  "archaic": "Open, inexperienced, or sincere. Sometimes the naive person who is easily led. Sometimes “without mixture.”",
+  "modern": "Easy, or not complicated. “Simple” can still mean naive.",
+  "pos": "adjective"
+ },
+ "sittest": {
+  "archaic": "Older form used with thou. “Thou sittest” means “you sit.”",
+  "modern": "sit",
+  "pos": "verb"
+ },
+ "sitteth": {
+  "archaic": "Older form of “sits,” used with he, she, or it.",
+  "modern": "sits",
+  "pos": "verb"
+ },
+ "sleepest": {
+  "archaic": "Older form used with thou. “Thou sleepest” means “you sleep.”",
+  "modern": "sleep",
+  "pos": "verb"
+ },
+ "sleepeth": {
+  "archaic": "Older form of “sleeps,” used with he, she, or it.",
+  "modern": "sleeps",
+  "pos": "verb"
+ },
+ "smitest": {
+  "archaic": "Older form used with thou. “Thou smitest” means “you strike.”",
+  "modern": "strike",
+  "pos": "verb"
+ },
+ "smiteth": {
+  "archaic": "Older form of “strikes,” used with he, she, or it.",
+  "modern": "strikes",
+  "pos": "verb"
+ },
+ "sod": {
+  "archaic": "Boiled. Past of seethe. “Jacob sod pottage” means Jacob boiled stew.",
+  "modern": "A piece of turf. The KJV verb is boiled.",
+  "pos": "verb"
+ },
+ "sodden": {
+  "archaic": "Boiled.",
+  "modern": "Soaked through.",
+  "pos": "adjective"
+ },
+ "sometime": {
+  "archaic": "Formerly, once. Not “at an unnamed time.”",
+  "modern": "At some unspecified time.",
+  "pos": "adverb"
+ },
+ "sometimes": {
+  "archaic": "Formerly. “Ye who sometimes were far off” means you who once were far off.",
+  "modern": "Occasionally.",
+  "pos": "adverb"
+ },
+ "soothsayer": {
+  "archaic": "A person who claims to foretell events.",
+  "modern": "A fortune teller. The word is old-fashioned but the sense is the same.",
+  "pos": "noun"
+ },
+ "sore": {
+  "archaic": "Greatly, severely. “Sore afraid” means badly frightened. As a noun it can also be a wound.",
+  "modern": "Painful, or a raw wound. The adverb “greatly” is the sense easy to miss.",
+  "pos": "adverb"
+ },
+ "sotish": {
+  "archaic": "Foolish, dull, stupid.",
+  "modern": "The modern spelling “sottish” means drunk and foolish.",
+  "pos": "adjective"
+ },
+ "sowest": {
+  "archaic": "Older form used with thou. “Thou sowest” means “you sow.”",
+  "modern": "sow",
+  "pos": "verb"
+ },
+ "soweth": {
+  "archaic": "Older form of “sows,” used with he, she, or it.",
+  "modern": "sows",
+  "pos": "verb"
+ },
+ "speakest": {
+  "archaic": "Older form used with thou. “Thou speakest” means “you speak.”",
+  "modern": "speak",
+  "pos": "verb"
+ },
+ "speaketh": {
+  "archaic": "Older form of “speaks,” used with he, she, or it.",
+  "modern": "speaks",
+  "pos": "verb"
+ },
+ "speed": {
+  "archaic": "To succeed or prosper. “Good speed” means success. “God speed” wishes someone success.",
+  "modern": "Quickness.",
+  "pos": "noun"
+ },
+ "standest": {
+  "archaic": "Older form used with thou. “Thou standest” means “you stand.”",
+  "modern": "stand",
+  "pos": "verb"
+ },
+ "standeth": {
+  "archaic": "Older form of “stands,” used with he, she, or it.",
+  "modern": "stands",
+  "pos": "verb"
+ },
+ "stay": {
+  "archaic": "A support, or to wait, stop, or rely. “Stay upon” can mean rest your weight on.",
+  "modern": "To remain. A legal stay stops a proceeding. The sense “prop” or “support” is now rare.",
+  "pos": "noun"
+ },
+ "strait": {
+  "archaic": "Narrow, tight, strict. “Strait is the gate” means the gate is narrow. This is not the spelling “straight.”",
+  "modern": "A narrow passage of water. “Strait” meaning “narrow” survives in “straitjacket” and “straitened.”",
+  "pos": "adjective"
+ },
+ "straitly": {
+  "archaic": "Strictly, tightly, sternly.",
+  "modern": "The word is obsolete. It means strictly.",
+  "pos": "adverb"
+ },
+ "strawed": {
+  "archaic": "Scattered, strewed.",
+  "modern": "Strewed.",
+  "pos": "verb"
+ },
+ "study": {
+  "archaic": "To aim, be diligent, make it one’s business. “Study to be quiet” means make it your aim to live quietly.",
+  "modern": "To learn by reading and practice.",
+  "pos": "verb"
+ },
+ "stuff": {
+  "archaic": "Goods, belongings, equipment.",
+  "modern": "Material, or unspecified things. The KJV sense is one’s baggage.",
+  "pos": "noun"
+ },
+ "subtil": {
+  "archaic": "Crafty, shrewd, clever. The serpent was “subtil.”",
+  "modern": "The modern spelling is “subtle”: delicate, or hard to notice. The KJV word stresses craft.",
+  "pos": "adjective"
+ },
+ "subtle": {
+  "archaic": "Crafty or finely made, depending on the verse.",
+  "modern": "Delicate, or hard to detect.",
+  "pos": "adjective"
+ },
+ "suffer": {
+  "archaic": "To allow or permit. “Suffer the little children” means let the children come. It can also mean to endure pain.",
+  "modern": "To feel pain, or to endure. “Allow” is the modern word for the KJV sense of permission.",
+  "pos": "verb"
+ },
+ "sup": {
+  "archaic": "To eat the evening meal.",
+  "modern": "To eat or drink a little. “Supper” is the meal.",
+  "pos": "verb"
+ },
+ "suretiship": {
+  "archaic": "The obligation taken on by a guarantor.",
+  "modern": "Standing as a guarantor. The word is rare.",
+  "pos": "noun"
+ },
+ "surety": {
+  "archaic": "A guarantor, or certainty.",
+  "modern": "Certainty, or a person who guarantees a debt.",
+  "pos": "noun"
+ },
+ "surfeiting": {
+  "archaic": "Excess, especially too much to eat and drink.",
+  "modern": "Overindulgence.",
+  "pos": "noun"
+ },
+ "tache": {
+  "archaic": "A clasp or hook.",
+  "modern": "The word is obsolete in this sense. It is a clasp.",
+  "pos": "noun"
+ },
+ "take thought": {
+  "archaic": "To be anxious. “Take no thought” means do not worry.",
+  "modern": "To think about something.",
+  "pos": "verb"
+ },
+ "takest": {
+  "archaic": "Older form used with thou. “Thou takest” means “you take.”",
+  "modern": "take",
+  "pos": "verb"
+ },
+ "taketh": {
+  "archaic": "Older form of “takes,” used with he, she, or it.",
+  "modern": "takes",
+  "pos": "verb"
+ },
+ "tale": {
+  "archaic": "A count or quota. “The tale of the bricks” is the number of bricks required. It can also mean a story.",
+  "modern": "A story.",
+  "pos": "noun"
+ },
+ "target": {
+  "archaic": "A small shield.",
+  "modern": "A goal, or something aimed at.",
+  "pos": "noun"
+ },
+ "teachest": {
+  "archaic": "Older form used with thou. “Thou teachest” means “you teach.”",
+  "modern": "teach",
+  "pos": "verb"
+ },
+ "teacheth": {
+  "archaic": "Older form of “teaches,” used with he, she, or it.",
+  "modern": "teaches",
+  "pos": "verb"
+ },
+ "tell": {
+  "archaic": "Often to count. “Tell the stars” means count the stars. It also means to say, as it does now.",
+  "modern": "To say, or to inform.",
+  "pos": "verb"
+ },
+ "tempt": {
+  "archaic": "To test or try, not only to entice into evil. “God did tempt Abraham” means God tested Abraham. Other verses do use it for enticement.",
+  "modern": "To entice someone to do wrong.",
+  "pos": "verb"
+ },
+ "temptation": {
+  "archaic": "A trial or test, or an enticement. The verse decides which.",
+  "modern": "An enticement to do wrong.",
+  "pos": "noun"
+ },
+ "thee": {
+  "archaic": "Object form of thou, one person. “I give thee” means “I give you.”",
+  "modern": "The modern word is “you.”",
+  "pos": "pronoun"
+ },
+ "thence": {
+  "archaic": "From that place.",
+  "modern": "From there.",
+  "pos": "adverb"
+ },
+ "thine": {
+  "archaic": "Possessive of thou when it stands alone, or before a vowel sound. “Thine is the kingdom.” “Thine eyes.”",
+  "modern": "The modern words are “your” and “yours.”",
+  "pos": "pronoun"
+ },
+ "thither": {
+  "archaic": "To that place.",
+  "modern": "There.",
+  "pos": "adverb"
+ },
+ "thou": {
+  "archaic": "Subject form for one person. “Thou art” means “you are.” The KJV aims at thou and thee for one person, and ye and you for more than one.",
+  "modern": "Everyday modern English uses “you” for one person or many.",
+  "pos": "pronoun"
+ },
+ "thy": {
+  "archaic": "Possessive of thou: “your,” speaking to one person, when a noun follows. “Thy word.”",
+  "modern": "The modern word is “your.”",
+  "pos": "pronoun"
+ },
+ "thyself": {
+  "archaic": "Emphatic or reflexive form of thou: “yourself,” one person.",
+  "modern": "The modern word is “yourself.”",
+  "pos": "pronoun"
+ },
+ "tire": {
+  "archaic": "A headdress or ornament for the head.",
+  "modern": "To exhaust, or the rubber ring of a wheel.",
+  "pos": "noun"
+ },
+ "touchest": {
+  "archaic": "Older form used with thou. “Thou touchest” means “you touch.”",
+  "modern": "touch",
+  "pos": "verb"
+ },
+ "toucheth": {
+  "archaic": "Older form of “touches,” used with he, she, or it.",
+  "modern": "touches",
+  "pos": "verb"
+ },
+ "translate": {
+  "archaic": "To transfer, carry over, or move from one place or condition to another. Enoch “was translated” means he was taken up. It is not about languages there.",
+  "modern": "To express words in another language. The physical sense “move” survives in “translate a bishop” and in mathematics.",
+  "pos": "verb"
+ },
+ "translated": {
+  "archaic": "Transferred, removed, taken from one state into another.",
+  "modern": "Expressed in another language.",
+  "pos": "verb"
+ },
+ "trow": {
+  "archaic": "To believe or suppose.",
+  "modern": "Believe. The word is obsolete.",
+  "pos": "verb"
+ },
+ "trustest": {
+  "archaic": "Older form used with thou. “Thou trustest” means “you trust.”",
+  "modern": "trust",
+  "pos": "verb"
+ },
+ "trusteth": {
+  "archaic": "Older form of “trusts,” used with he, she, or it.",
+  "modern": "trusts",
+  "pos": "verb"
+ },
+ "turnest": {
+  "archaic": "Older form used with thou. “Thou turnest” means “you turn.”",
+  "modern": "turn",
+  "pos": "verb"
+ },
+ "turneth": {
+  "archaic": "Older form of “turns,” used with he, she, or it.",
+  "modern": "turns",
+  "pos": "verb"
+ },
+ "twain": {
+  "archaic": "Two.",
+  "modern": "Two. The word is archaic.",
+  "pos": "adjective"
+ },
+ "unction": {
+  "archaic": "Anointing.",
+  "modern": "Anointing, or an exaggerated earnestness in the way someone speaks.",
+  "pos": "noun"
+ },
+ "unto": {
+  "archaic": "To.",
+  "modern": "To.",
+  "pos": "preposition"
+ },
+ "untoward": {
+  "archaic": "Crooked, perverse, hard to direct.",
+  "modern": "Inconvenient, or unlucky. The KJV sense is morally crooked.",
+  "pos": "adjective"
+ },
+ "usury": {
+  "archaic": "Interest on a loan. In the KJV it is not limited to excessive interest.",
+  "modern": "An unlawfully high rate of interest.",
+  "pos": "noun"
+ },
+ "verily": {
+  "archaic": "Truly. A way of saying “amen” or “this is certain.”",
+  "modern": "Truly, or “I tell you the truth.”",
+  "pos": "adverb"
+ },
+ "very": {
+  "archaic": "True, actual, real. “The very God” means the true God. It is also the modern intensive.",
+  "modern": "Used to emphasize. The sense “true” or “actual” survives in “the very man.”",
+  "pos": "adjective"
+ },
+ "victual": {
+  "archaic": "Food.",
+  "modern": "Food.",
+  "pos": "noun"
+ },
+ "victuals": {
+  "archaic": "Food supplies. Provisions.",
+  "modern": "Food. The word is old-fashioned.",
+  "pos": "noun"
+ },
+ "virtue": {
+  "archaic": "Often power or strength. “Virtue had gone out of him” means power had gone out of him. It can also mean moral excellence.",
+  "modern": "Moral goodness. The sense “healing power” is now rare.",
+  "pos": "noun"
+ },
+ "volume": {
+  "archaic": "A roll, a scroll. “The volume of the book” is the scroll of the book.",
+  "modern": "A book, or a measure of space.",
+  "pos": "noun"
+ },
+ "waitest": {
+  "archaic": "Older form used with thou. “Thou waitest” means “you wait.”",
+  "modern": "wait",
+  "pos": "verb"
+ },
+ "waiteth": {
+  "archaic": "Older form of “waits,” used with he, she, or it.",
+  "modern": "waits",
+  "pos": "verb"
+ },
+ "walkest": {
+  "archaic": "Older form used with thou. “Thou walkest” means “you walk.”",
+  "modern": "walk",
+  "pos": "verb"
+ },
+ "walketh": {
+  "archaic": "Older form of “walks,” used with he, she, or it.",
+  "modern": "walks",
+  "pos": "verb"
+ },
+ "washest": {
+  "archaic": "Older form used with thou. “Thou washest” means “you wash.”",
+  "modern": "wash",
+  "pos": "verb"
+ },
+ "washeth": {
+  "archaic": "Older form of “washes,” used with he, she, or it.",
+  "modern": "washes",
+  "pos": "verb"
+ },
+ "wast": {
+  "archaic": "Were, used with thou in the past. “Thou wast” means “you were.”",
+  "modern": "Were.",
+  "pos": "verb"
+ },
+ "watchest": {
+  "archaic": "Older form used with thou. “Thou watchest” means “you watch.”",
+  "modern": "watch",
+  "pos": "verb"
+ },
+ "watcheth": {
+  "archaic": "Older form of “watches,” used with he, she, or it.",
+  "modern": "watches",
+  "pos": "verb"
+ },
+ "wax": {
+  "archaic": "To grow or become. “Waxed strong” means grew strong. Not the substance from bees, except where the context is a candle.",
+  "modern": "A substance used in candles and polish. “Wax” meaning “become” is obsolete.",
+  "pos": "verb"
+ },
+ "waxed": {
+  "archaic": "Grew, became.",
+  "modern": "Grew, in older English.",
+  "pos": "verb"
+ },
+ "wealth": {
+  "archaic": "Welfare, well-being, prosperity in the broad sense. “Another’s wealth” can mean another person’s good, not only their money.",
+  "modern": "A large amount of money or possessions.",
+  "pos": "noun"
+ },
+ "wert": {
+  "archaic": "Were, used with thou.",
+  "modern": "Were.",
+  "pos": "verb"
+ },
+ "whatsoever": {
+  "archaic": "Whatever.",
+  "modern": "Whatever.",
+  "pos": "pronoun"
+ },
+ "whence": {
+  "archaic": "From what place, or from which.",
+  "modern": "From where.",
+  "pos": "adverb"
+ },
+ "wherefore": {
+  "archaic": "Why, or for this reason.",
+  "modern": "Why.",
+  "pos": "adverb"
+ },
+ "whit": {
+  "archaic": "A tiny bit. “Every whit” means entirely, down to the smallest part.",
+  "modern": "A bit. Mostly heard in “not a whit.”",
+  "pos": "noun"
+ },
+ "whither": {
+  "archaic": "To what place.",
+  "modern": "Where, in the sense of “to where.”",
+  "pos": "adverb"
+ },
+ "whole": {
+  "archaic": "Well, sound, healed. “Made whole” means made well.",
+  "modern": "Entire, complete.",
+  "pos": "adjective"
+ },
+ "whoso": {
+  "archaic": "Whoever.",
+  "modern": "Whoever.",
+  "pos": "pronoun"
+ },
+ "whosoever": {
+  "archaic": "Whoever.",
+  "modern": "Whoever.",
+  "pos": "pronoun"
+ },
+ "wilt": {
+  "archaic": "Will, used with thou.",
+  "modern": "Will.",
+  "pos": "verb"
+ },
+ "wist": {
+  "archaic": "Knew. Past of wit.",
+  "modern": "Knew.",
+  "pos": "verb"
+ },
+ "wit": {
+  "archaic": "To know. “To wit” means “that is” or “namely.” “We do you to wit” means we want you to know.",
+  "modern": "Clever humor. As a verb, “wit” meaning “know” is obsolete.",
+  "pos": "verb"
+ },
+ "withal": {
+  "archaic": "With that, besides, or also.",
+  "modern": "Besides, or with it.",
+  "pos": "adverb"
+ },
+ "without": {
+  "archaic": "Outside. “Without are dogs” means outside are dogs. It also means “not having.”",
+  "modern": "Lacking, or in the absence of.",
+  "pos": "preposition"
+ },
+ "workest": {
+  "archaic": "Older form used with thou. “Thou workest” means “you work.”",
+  "modern": "work",
+  "pos": "verb"
+ },
+ "worketh": {
+  "archaic": "Older form of “works,” used with he, she, or it.",
+  "modern": "works",
+  "pos": "verb"
+ },
+ "worship": {
+  "archaic": "To bow, honor, or pay reverence. Used of God and, in some verses, of a person who is shown honor. It is not limited to a church service.",
+  "modern": "Religious reverence given to God. Honoring a person is not usually called worship today.",
+  "pos": "verb"
+ },
+ "wot": {
+  "archaic": "Know. “I wot” means “I know.”",
+  "modern": "Know.",
+  "pos": "verb"
+ },
+ "wottest": {
+  "archaic": "Know, used with thou.",
+  "modern": "Know.",
+  "pos": "verb"
+ },
+ "wouldest": {
+  "archaic": "Would, used with thou.",
+  "modern": "Would.",
+  "pos": "verb"
+ },
+ "wouldst": {
+  "archaic": "Would, used with thou.",
+  "modern": "Would.",
+  "pos": "verb"
+ },
+ "writest": {
+  "archaic": "Older form used with thou. “Thou writest” means “you write.”",
+  "modern": "write",
+  "pos": "verb"
+ },
+ "writeth": {
+  "archaic": "Older form of “writes,” used with he, she, or it.",
+  "modern": "writes",
+  "pos": "verb"
+ },
+ "ye": {
+  "archaic": "Subject form of “you,” usually more than one person. “Ye are the light” addresses a group.",
+  "modern": "Modern English uses “you” as the subject.",
+  "pos": "pronoun"
+ },
+ "yea": {
+  "archaic": "Yes. A strong yes, sometimes “indeed.”",
+  "modern": "Yes.",
+  "pos": "adverb"
+ },
+ "youward": {
+  "archaic": "Toward you.",
+  "modern": "Toward you.",
+  "pos": "adverb"
+ },
+ "zion": {
+  "archaic": "The stronghold of Jerusalem, and by extension the city and God’s people there.",
+  "modern": "The same name, often used for Jerusalem or for the Jewish people.",
+  "pos": "name"
+ }
+}
