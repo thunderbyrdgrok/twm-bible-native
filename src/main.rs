@@ -1261,8 +1261,7 @@ fn copy_to_clipboard(text: &str) -> Result<(), String> {
             return Ok(());
         }
     }
-    let mut child = Command::new("wl-copy")
-        .stdin(std::process::Stdio::piped())
+    let mut child = twm_bible_native::quiet(Command::new("wl-copy").stdin(std::process::Stdio::piped()))
         .spawn()
         .map_err(|_| "The clipboard is not available.".to_string())?;
     use std::io::Write;

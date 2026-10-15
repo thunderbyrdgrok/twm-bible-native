@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+### Fixes
+- Windows: a console window no longer flashes open when a word definition is looked up. Every helper program the app starts (the definition fetch, the intro player launcher, clipboard and theme helpers) now starts without a console window.
+
 ## 1.1.0
 
 ### Reading

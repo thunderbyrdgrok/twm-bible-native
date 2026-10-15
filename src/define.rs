@@ -53,8 +53,7 @@ fn encode(key: &str) -> String {
 }
 
 fn fetch(url: &str) -> Option<(u16, String)> {
-    let output = Command::new("curl")
-        .args([
+    let output = crate::quiet(Command::new("curl").args([
             "-sS",
             "--max-time",
             "6",
@@ -65,7 +64,7 @@ fn fetch(url: &str) -> Option<(u16, String)> {
             "-w",
             "\n%{http_code}",
             url,
-        ])
+        ]))
         .output()
         .ok()?;
     if !output.status.success() && output.stdout.is_empty() {

@@ -61,7 +61,7 @@ pub fn theme_label(mode: &str, light: bool) -> String {
 }
 
 fn command_output(program: &str, args: &[&str]) -> Option<String> {
-    let output = Command::new(program).args(args).output().ok()?;
+    let output = crate::quiet(Command::new(program).args(args)).output().ok()?;
     if !output.status.success() && output.stdout.is_empty() {
         return None;
     }

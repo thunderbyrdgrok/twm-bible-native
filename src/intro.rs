@@ -39,7 +39,7 @@ pub fn find() -> Option<PathBuf> {
 }
 
 fn spawn(mut command: Command) -> bool {
-    match command
+    match crate::quiet(&mut command)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

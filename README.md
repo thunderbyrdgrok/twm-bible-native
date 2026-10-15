@@ -21,7 +21,7 @@ Download the file for your system from the GitHub Releases page.
 - Windows: `cargo build --release`, then `makensis packaging\windows\installer.nsi`
 - macOS: `./packaging/macos/build-dmg.sh`
 
-Pushing a tag such as `v1.1.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
+Pushing a tag such as `v1.1.1` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
 
 ## Run from source
 
