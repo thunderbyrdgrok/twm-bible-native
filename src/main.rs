@@ -13,9 +13,12 @@ use std::time::{Duration, Instant};
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 
 use twm_bible_native::bible::{self as texts, Book};
-use twm_bible_native::store::{self, ImportRec, Settings, FONT_MAX, FONT_MIN};
+use twm_bible_native::store::{self, ImportRec, Settings, FONT_MAX, FONT_MIN, GAP_MAX, GAP_MIN};
 use twm_bible_native::theme::{self, Scheme};
 use twm_bible_native::define;
+use twm_bible_native::export;
+use twm_bible_native::extras::{self, History, Place};
+use twm_bible_native::flow;
 
 slint::include_modules!();
 
@@ -79,6 +82,11 @@ struct Core {
     flash_message: String,
     flash_until: Option<Instant>,
     last_scheme: Scheme,
+    text_width: f32,
+    history: History,
+    pending_backup: Option<extras::Backup>,
+    hit_width: f32,
+    terms: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -91,6 +99,8 @@ struct Models {
     versions: Rc<VecModel<VersionRow>>,
     live: Rc<VecModel<LiveRow>>,
     links: Rc<VecModel<LinkChip>>,
+    bookmarks: Rc<VecModel<BookmarkRow>>,
+    word_hits: Rc<VecModel<HitRow>>,
 }
 
 impl Core {
@@ -122,11 +132,20 @@ impl Core {
             flash_message: String::new(),
             flash_until: None,
             last_scheme: Scheme::Dark,
+            text_width: 600.0,
+            history: History::default(),
+            pending_backup: None,
+            hit_width: 560.0,
+            terms: Vec::new(),
         };
         if core.data_dir.is_none() {
             core.load_error = "The Bible text was not found. Expected data/kjv.json beside the app.".into();
         }
         core.mount_editions();
+        if core.settings.compare_on {
+            let id = core.settings.compare_id.clone();
+            let _ = core.ensure(&id);
+        }
         if let Err(err) = core.ensure_active() {
             if core.load_error.is_empty() {
                 core.load_error = err;
@@ -368,6 +387,108 @@ impl Core {
         }
     }
 
+    fn compare_active(&self) -> bool {
+        self.settings.compare_on
+            && self
+                .editions
+                .get(&self.settings.compare_id)
+                .map(|edition| edition.books.is_some())
+                .unwrap_or(false)
+    }
+
+    /// Side by side when the pane is wide enough for two readable columns.
+    fn side_by_side(&self) -> bool {
+        self.compare_active() && self.text_width >= 640.0
+    }
+
+    fn col_width(&self) -> f32 {
+        if self.side_by_side() {
+            (self.text_width - 24.0) / 2.0
+        } else {
+            self.text_width
+        }
+    }
+
+    fn compare_label(&self) -> String {
+        self.editions
+            .get(&self.settings.compare_id)
+            .map(|edition| edition.label.clone())
+            .unwrap_or_default()
+    }
+
+    fn compare_verses(&self) -> Vec<String> {
+        if !self.compare_active() {
+            return Vec::new();
+        }
+        self.editions
+            .get(&self.settings.compare_id)
+            .and_then(|edition| edition.books.as_ref())
+            .and_then(|books| books.iter().find(|book| book.id == self.book_id))
+            .and_then(|book| book.chapters.get(self.chapter.saturating_sub(1)))
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    fn set_compare(&mut self, on: bool) -> Result<(), String> {
+        if on {
+            let id = self.settings.compare_id.clone();
+            self.ensure(&id)?;
+        }
+        self.settings.compare_on = on;
+        Ok(())
+    }
+
+    fn set_compare_version(&mut self, id: &str) -> Result<String, String> {
+        if !self.editions.contains_key(id) {
+            return Err("That text is not installed.".into());
+        }
+        self.ensure(id)?;
+        self.settings.compare_id = id.to_string();
+        self.settings.compare_on = true;
+        Ok(self.compare_label())
+    }
+
+    fn current_place(&self) -> Place {
+        Place { book: self.book_id.clone(), chapter: self.chapter, verse: self.verse }
+    }
+
+    /// Like go_to, but remembers where we were so BACK can return.
+    fn go_to_tracked(&mut self, book_id: &str, chapter: usize, verse: Option<usize>) -> Result<(), String> {
+        let before = self.current_place();
+        self.go_to(book_id, chapter, verse)?;
+        if self.current_place() != before {
+            self.history.push(before);
+        }
+        Ok(())
+    }
+
+    fn go_back(&mut self) -> Result<(), String> {
+        let place = self.history.pop().ok_or_else(|| "Nothing to go back to.".to_string())?;
+        self.go_to(&place.book, place.chapter, place.verse)
+    }
+
+    fn verse_key(&self) -> Option<String> {
+        self.verse.map(|verse| texts::ref_key(&self.book_id, self.chapter, verse))
+    }
+
+    fn toggle_bookmark_here(&mut self) -> Result<bool, String> {
+        let key = self.verse_key().ok_or_else(|| "Select a verse to bookmark first.".to_string())?;
+        Ok(extras::toggle_bookmark(&mut self.settings.bookmarks, &key))
+    }
+
+    fn verse_text_of(&self, key: &str) -> String {
+        let Some((book, chapter, verse)) = texts::split_key(key) else {
+            return String::new();
+        };
+        self.books()
+            .iter()
+            .find(|item| item.id == book)
+            .and_then(|item| item.chapters.get(chapter.saturating_sub(1)))
+            .and_then(|verses| verses.get(verse.saturating_sub(1)))
+            .map(|text| texts::clip(text, 140))
+            .unwrap_or_default()
+    }
+
     fn set_mark_color(&mut self, color: &str) {
         if !store::MARKS.contains(&color) {
             return;
@@ -420,12 +541,13 @@ impl Core {
         let parsed = texts::parse_reference(query).ok_or_else(|| "No book by that name.".to_string())?;
         let chapter = parsed.chapter.unwrap_or(1) as usize;
         let verse = parsed.verse.map(|number| number as usize);
-        self.go_to(parsed.book_id, chapter, verse)?;
+        self.go_to_tracked(parsed.book_id, chapter, verse)?;
         Ok(format!("Opened {}.", self.place_title()))
     }
 
-    fn search_words(&mut self, query: &str) -> String {
-        let result = texts::search_verses(self.books(), query, 500);
+    fn search_words(&mut self, query: &str, scope: &extras::Scope) -> String {
+        let result = extras::search(self.books(), query, scope, 500);
+        self.terms = extras::parse_terms(query);
         if result.too_short {
             self.last_hits.clear();
             let message = "Type at least two letters.".to_string();
@@ -588,8 +710,12 @@ impl Core {
         self.settings.font_size = (self.settings.font_size + delta).clamp(FONT_MIN, FONT_MAX);
     }
 
+    fn bump_gap(&mut self, delta: i32) {
+        self.settings.verse_gap = (self.settings.verse_gap + delta).clamp(GAP_MIN, GAP_MAX);
+    }
+
     fn set_theme(&mut self, mode: &str) {
-        if matches!(mode, "light" | "dark" | "system") {
+        if matches!(mode, "light" | "dark" | "system") || theme::PALETTES.contains(&mode) {
             self.settings.theme_mode = mode.to_string();
         }
     }
@@ -699,6 +825,7 @@ fn publish_chrome(ui: &AppWindow, core: &Core) {
     session.set_mark_count(core.settings.highlights.len() as i32);
     session.set_version_count(core.settings.enabled.len() as i32);
     session.set_reading_size(core.settings.font_size);
+    session.set_verse_gap(core.settings.verse_gap);
     session.set_mark_color(core.settings.mark_color.clone().into());
     session.set_theme_mode(core.settings.theme_mode.clone().into());
     session.set_can_prev(core.can_step(-1));
@@ -706,6 +833,29 @@ fn publish_chrome(ui: &AppWindow, core: &Core) {
     session.set_resolved_theme(theme::theme_label(&core.settings.theme_mode, light).into());
     session.set_status(core.current_status(light).into());
     session.set_search_summary(core.search_summary.clone().into());
+    session.set_intro_on_start(core.settings.intro_on_startup);
+    session.set_compare_on(core.compare_active());
+    session.set_compare_label(core.compare_label().into());
+    session.set_can_back(!core.history.is_empty());
+    session.set_bookmark_count(core.settings.bookmarks.len() as i32);
+    let here = core.verse_key().map(|key| core.settings.bookmarks.contains(&key)).unwrap_or(false);
+    session.set_is_bookmarked(here);
+}
+
+fn publish_bookmarks(models: &Models, core: &Core) {
+    let rows = core
+        .settings
+        .bookmarks
+        .iter()
+        .filter_map(|key| {
+            let (book, chapter, verse) = texts::split_key(key)?;
+            Some(BookmarkRow {
+                reference: format!("{} {chapter}:{verse}", core.name_of(book)).into(),
+                snippet: core.verse_text_of(key).into(),
+            })
+        })
+        .collect::<Vec<_>>();
+    models.bookmarks.set_vec(rows);
 }
 
 fn publish_books(models: &Models, core: &Core) {
@@ -735,6 +885,8 @@ fn publish_chapters(models: &Models, core: &Core) {
 }
 
 fn publish_verses(models: &Models, core: &Core) {
+    let second = core.compare_verses();
+    let col = core.col_width();
     let rows = core
         .chapter_verses()
         .iter()
@@ -742,9 +894,16 @@ fn publish_verses(models: &Models, core: &Core) {
         .map(|(index, text)| {
             let number = index + 1;
             let key = texts::ref_key(&core.book_id, core.chapter, number);
+            let size = core.settings.font_size as f32;
+            let wrapped = flow::wrap(text, col, size);
+            let wrapped2 = flow::wrap(second.get(index).map(String::as_str).unwrap_or(""), col, size);
             VerseRow {
+                text2: flow::join(&wrapped2).into(),
+                lines2: wrapped2.len() as i32,
+                side: core.side_by_side(),
                 number: number as i32,
-                text: text.clone().into(),
+                lines: wrapped.len().max(1) as i32,
+                text: flow::join(&wrapped).into(),
                 mark: core
                     .settings
                     .highlights
@@ -753,6 +912,7 @@ fn publish_verses(models: &Models, core: &Core) {
                     .unwrap_or_default()
                     .into(),
                 has_note: core.settings.notes.contains_key(&key),
+                bookmarked: core.settings.bookmarks.contains(&key),
                 selected: core.verse == Some(number),
             }
         })
@@ -777,6 +937,7 @@ fn sync_verse_row(models: &Models, core: &Core, number: i32) {
         .unwrap_or_default()
         .into();
     row.has_note = core.settings.notes.contains_key(&key);
+    row.bookmarked = core.settings.bookmarks.contains(&key);
     row.selected = core.verse == Some(number as usize);
     models.verses.set_row_data(index, row);
 }
@@ -793,6 +954,7 @@ fn publish_versions(models: &Models, core: &Core) {
                 enabled: core.settings.enabled.iter().any(|item| item == id),
                 active: core.settings.active == *id,
                 builtin: edition.builtin,
+                compare: core.settings.compare_id == *id,
             })
         })
         .collect::<Vec<_>>();
@@ -818,6 +980,20 @@ fn publish_live(models: &Models, core: &Core) {
     models.live.set_vec(rows);
 }
 
+fn hit_lines(core: &Core, snippet: &str) -> ModelRc<HitLine> {
+    let lines = extras::highlight_lines(snippet, &core.terms, core.hit_width, 15.0)
+        .into_iter()
+        .map(|segs| HitLine {
+            segs: ModelRc::new(VecModel::from(
+                segs.into_iter()
+                    .map(|(text, hl)| HitSeg { text: text.into(), hl })
+                    .collect::<Vec<_>>(),
+            )),
+        })
+        .collect::<Vec<_>>();
+    ModelRc::new(VecModel::from(lines))
+}
+
 fn publish_hits(models: &Models, core: &Core) {
     let rows = core
         .last_hits
@@ -825,9 +1001,24 @@ fn publish_hits(models: &Models, core: &Core) {
         .map(|hit| HitRow {
             reference: hit.reference.clone().into(),
             snippet: hit.snippet.clone().into(),
+            lines: hit_lines(core, &hit.snippet),
         })
         .collect::<Vec<_>>();
     models.hits.set_vec(rows);
+}
+
+fn publish_word_hits(models: &Models, core: &Core) {
+    let rows = core
+        .last_hits
+        .iter()
+        .take(60)
+        .map(|hit| HitRow {
+            reference: hit.reference.clone().into(),
+            snippet: hit.snippet.clone().into(),
+            lines: ModelRc::default(),
+        })
+        .collect::<Vec<_>>();
+    models.word_hits.set_vec(rows);
 }
 
 fn format_links(core: &Core, keys: &[String]) -> String {
@@ -889,6 +1080,9 @@ fn publish_words(ui: &AppWindow, core: &Core, models: &Models) {
     session.set_sense_word("".into());
     session.set_sense_text("Select a word in the verse, or type one below.".into());
     session.set_modern_text("".into());
+    session.set_query_word("".into());
+    session.set_popup_open(false);
+    models.word_hits.set_vec(Vec::new());
 }
 
 fn focus_current(ui: &AppWindow, core: &Core) {
@@ -899,6 +1093,7 @@ fn focus_current(ui: &AppWindow, core: &Core) {
 }
 
 fn after_nav(ui: &AppWindow, core: &Core, models: &Models) {
+    publish_bookmarks(models, core);
     publish_books(models, core);
     publish_chapters(models, core);
     publish_versions(models, core);
@@ -915,6 +1110,7 @@ fn apply_theme(ui: &AppWindow, core: &mut Core) {
     core.last_scheme = scheme;
     let light = theme::resolved_light(&core.settings.theme_mode, scheme);
     ui.global::<Theme>().set_light(light);
+    ui.global::<Theme>().set_palette(theme::palette_of(&core.settings.theme_mode).into());
     let session = ui.global::<Session>();
     session.set_desktop_appearance(desktop_line(scheme).into());
     session.set_resolved_theme(theme::theme_label(&core.settings.theme_mode, light).into());
@@ -975,6 +1171,60 @@ fn show_sense(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, sense: &texts
     });
 }
 
+fn clean_word(text: &str) -> String {
+    text.trim_matches(|c: char| !c.is_alphanumeric())
+        .replace('\u{2019}', "'")
+        .to_lowercase()
+}
+
+fn show_word_hits(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, models: &Models, word: &str) {
+    let word = clean_word(word);
+    ui.global::<Session>().set_query_word(word.clone().into());
+    core.borrow_mut().search_words(&word, &extras::Scope::All);
+    publish_hits(models, &core.borrow());
+    publish_word_hits(models, &core.borrow());
+    publish_chrome(ui, &core.borrow());
+}
+
+fn pick_and_publish(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, models: &Models, number: i32) {
+    commit_note(ui, core, models, false);
+    let previous = core.borrow().verse;
+    core.borrow_mut().pick_verse(number as usize);
+    persist_ui(ui, core);
+    if let Some(prev) = previous {
+        if Some(prev) != core.borrow().verse {
+            sync_verse_row(models, &core.borrow(), prev as i32);
+        }
+    }
+    sync_verse_row(models, &core.borrow(), number);
+    publish_note_fields(ui, &core.borrow(), models);
+    publish_words(ui, &core.borrow(), models);
+    focus_current(ui, &core.borrow());
+    publish_chrome(ui, &core.borrow());
+}
+
+/// Token index (in the selected verse) of the word under a press in the verse text.
+fn word_under_press(core: &Core, number: i32, line: f32, x: f32) -> Option<usize> {
+    let text = core.chapter_verses().get((number as usize).checked_sub(1)?)?.clone();
+    let size = core.settings.font_size as f32;
+    let lines = flow::wrap(&text, core.col_width(), size);
+    let chunk = flow::hit(&lines, line, x, size)?;
+    let chunks: Vec<String> = lines.into_iter().flatten().collect();
+    let words_before: usize = chunks[..chunk]
+        .iter()
+        .map(|c| texts::tokenize(c).iter().filter(|t| t.word).count())
+        .sum();
+    if texts::tokenize(&chunks[chunk]).iter().all(|t| !t.word) {
+        return None;
+    }
+    core.tokens
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| t.word)
+        .nth(words_before)
+        .map(|(index, _)| index)
+}
+
 fn commit_note(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, models: &Models, announce: bool) {
     let text = ui.global::<Session>().get_note_text().to_string();
     let links = ui.global::<Session>().get_link_text().to_string();
@@ -1028,6 +1278,10 @@ fn copy_to_clipboard(text: &str) -> Result<(), String> {
     }
 }
 
+fn session_intro(ui: &AppWindow, available: bool) {
+    ui.global::<Session>().set_intro_available(available);
+}
+
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     // The platform has to exist first. The native window reads this id when it is shown.
@@ -1042,6 +1296,8 @@ fn main() -> Result<(), slint::PlatformError> {
         versions: Rc::new(VecModel::from(Vec::<VersionRow>::new())),
         live: Rc::new(VecModel::from(Vec::<LiveRow>::new())),
         links: Rc::new(VecModel::from(Vec::<LinkChip>::new())),
+        bookmarks: Rc::new(VecModel::from(Vec::<BookmarkRow>::new())),
+        word_hits: Rc::new(VecModel::from(Vec::<HitRow>::new())),
     };
     let session = ui.global::<Session>();
     session.set_books(ModelRc::from(models.books.clone()));
@@ -1052,6 +1308,8 @@ fn main() -> Result<(), slint::PlatformError> {
     session.set_versions(ModelRc::from(models.versions.clone()));
     session.set_live_versions(ModelRc::from(models.live.clone()));
     session.set_links(ModelRc::from(models.links.clone()));
+    session.set_bookmarks(ModelRc::from(models.bookmarks.clone()));
+    session.set_word_hits(ModelRc::from(models.word_hits.clone()));
     session.set_clock(clock_now().into());
     apply_theme(&ui, &mut core.borrow_mut());
     after_nav(&ui, &core.borrow(), &models);
@@ -1096,6 +1354,329 @@ fn main() -> Result<(), slint::PlatformError> {
             publish_words(&ui, &core.borrow(), &models);
             focus_current(&ui, &core.borrow());
             publish_chrome(&ui, &core.borrow());
+        });
+    }
+    for hold in [false, true] {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        let handler = move |number: i32, line: f32, x: f32| {
+            let Some(ui) = weak.upgrade() else { return };
+            pick_and_publish(&ui, &core, &models, number);
+            let index = word_under_press(&core.borrow(), number, line, x);
+            if let Some(index) = index {
+                if hold {
+                    ui.global::<Session>().invoke_word_popup(index as i32);
+                } else {
+                    ui.global::<Session>().invoke_lookup_token(index as i32);
+                }
+            }
+        };
+        if hold {
+            ui.global::<Session>().on_verse_word_hold(handler);
+        } else {
+            ui.global::<Session>().on_verse_word_click(handler);
+        }
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_set_compare(move |on| {
+            let Some(ui) = weak.upgrade() else { return };
+            let result = core.borrow_mut().set_compare(on);
+            match result {
+                Ok(()) => {
+                    persist_ui(&ui, &core);
+                    publish_verses(&models, &core.borrow());
+                    publish_versions(&models, &core.borrow());
+                    publish_chrome(&ui, &core.borrow());
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_set_compare_version(move |id| {
+            let Some(ui) = weak.upgrade() else { return };
+            let result = core.borrow_mut().set_compare_version(id.as_str());
+            match result {
+                Ok(label) => {
+                    persist_ui(&ui, &core);
+                    publish_verses(&models, &core.borrow());
+                    publish_versions(&models, &core.borrow());
+                    publish_chrome(&ui, &core.borrow());
+                    show_status(&ui, &mut core.borrow_mut(), format!("Second text: {label}."));
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        ui.global::<Session>().on_hit_width(move |width| {
+            if width < 120.0 || (core.borrow().hit_width - width).abs() < 4.0 {
+                return;
+            }
+            core.borrow_mut().hit_width = width;
+            publish_hits(&models, &core.borrow());
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_export_passage(move |kind| {
+            let Some(ui) = weak.upgrade() else { return };
+            let session = ui.global::<Session>();
+            let from = session.get_export_from().to_string();
+            let to = session.get_export_to().to_string();
+            let with_notes = session.get_export_notes();
+            let built = {
+                let app = core.borrow();
+                let verses = app.chapter_verses();
+                export::parse_range(&from, &to, verses.len()).map(|(a, b)| {
+                    let list = (a..=b)
+                        .map(|number| {
+                            let key = texts::ref_key(&app.book_id, app.chapter, number);
+                            let note = if with_notes {
+                                app.settings.notes.get(&key).map(|n| n.text.clone()).filter(|t| !t.is_empty())
+                            } else {
+                                None
+                            };
+                            export::ExportVerse { number, text: verses[number - 1].clone(), note }
+                        })
+                        .collect::<Vec<_>>();
+                    let range = if a == 1 && b == verses.len() { String::new() } else if a == b { format!(":{a}") } else { format!(":{a}-{b}") };
+                    (format!("{} {}{range}", app.book_name(), app.chapter), app.version_label(), list)
+                })
+            };
+            let (title, version, list) = match built {
+                Ok(parts) => parts,
+                Err(err) => {
+                    show_status(&ui, &mut core.borrow_mut(), err);
+                    return;
+                }
+            };
+            let (label, ext, data): (&str, &str, Vec<u8>) = match kind.as_str() {
+                "pdf" => ("PDF", "pdf", export::to_pdf(&title, &version, &list)),
+                "html" => ("Web page (print friendly)", "html", export::to_html(&title, &version, &list).into_bytes()),
+                _ => ("Text", "txt", export::to_text(&title, &version, &list).into_bytes()),
+            };
+            let Some(path) = rfd::FileDialog::new()
+                .set_title("Export passage")
+                .set_file_name(format!("{}.{ext}", export::file_stem(&title)))
+                .add_filter(label, &[ext])
+                .save_file()
+            else {
+                return;
+            };
+            let path = if path.extension().is_some() { path } else { path.with_extension(ext) };
+            let message = match fs::write(&path, data) {
+                Ok(()) => format!("Exported {title} to {}.", path.display()),
+                Err(err) => format!("Could not export. {err}"),
+            };
+            session.set_export_popup(false);
+            show_status(&ui, &mut core.borrow_mut(), message);
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_export_backup(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let day = chrono::Local::now().format("%Y-%m-%d").to_string();
+            let Some(path) = rfd::FileDialog::new()
+                .set_title("Export notes, highlights and bookmarks")
+                .set_file_name(format!("twm-bible-backup-{day}.json"))
+                .add_filter("JSON", &["json"])
+                .save_file()
+            else {
+                return;
+            };
+            let path = if path.extension().is_some() { path } else { path.with_extension("json") };
+            let backup = extras::make_backup(&core.borrow().settings, &day);
+            let result = serde_json::to_vec_pretty(&backup)
+                .map_err(|err| err.to_string())
+                .and_then(|data| fs::write(&path, data).map_err(|err| err.to_string()));
+            let message = match result {
+                Ok(()) => format!(
+                    "Exported {} notes, {} highlights, {} bookmarks to {}.",
+                    backup.notes.len(),
+                    backup.highlights.len(),
+                    backup.bookmarks.len(),
+                    path.display()
+                ),
+                Err(err) => format!("Could not export. {err}"),
+            };
+            show_status(&ui, &mut core.borrow_mut(), message);
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_import_backup(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let Some(path) = rfd::FileDialog::new()
+                .set_title("Restore a TWM Bible backup")
+                .add_filter("JSON", &["json"])
+                .pick_file()
+            else {
+                return;
+            };
+            let parsed = fs::read_to_string(&path)
+                .map_err(|err| err.to_string())
+                .and_then(|text| extras::parse_backup(&text));
+            match parsed {
+                Ok(backup) => {
+                    let text = format!(
+                        "{} notes, {} highlights, {} bookmarks.",
+                        backup.notes.len(),
+                        backup.highlights.len(),
+                        backup.bookmarks.len()
+                    );
+                    core.borrow_mut().pending_backup = Some(backup);
+                    let session = ui.global::<Session>();
+                    session.set_import_text(text.into());
+                    session.set_import_popup(true);
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_import_apply(move |replace| {
+            let Some(ui) = weak.upgrade() else { return };
+            ui.global::<Session>().set_import_popup(false);
+            let Some(backup) = core.borrow_mut().pending_backup.take() else { return };
+            {
+                let app = core.borrow();
+                // A safety copy of the settings as they were, in case the restore was a mistake.
+                let _ = store::save(&app.state_dir.join("settings.pre-restore.json"), &app.settings);
+            }
+            extras::apply_backup(&mut core.borrow_mut().settings, &backup, replace);
+            persist_ui(&ui, &core);
+            after_nav(&ui, &core.borrow(), &models);
+            let message = if replace { "Restored. Your previous settings were kept as settings.pre-restore.json." } else { "Merged the backup into your notes, highlights and bookmarks." };
+            show_status(&ui, &mut core.borrow_mut(), message);
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_import_cancel(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            core.borrow_mut().pending_backup = None;
+            ui.global::<Session>().set_import_popup(false);
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_bump_gap(move |delta| {
+            let Some(ui) = weak.upgrade() else { return };
+            core.borrow_mut().bump_gap(delta);
+            persist_ui(&ui, &core);
+            publish_chrome(&ui, &core.borrow());
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_go_back(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            commit_note(&ui, &core, &models, false);
+            let result = core.borrow_mut().go_back();
+            match result {
+                Ok(()) => {
+                    persist_ui(&ui, &core);
+                    ui.global::<Session>().set_view("read".into());
+                    after_nav(&ui, &core.borrow(), &models);
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_toggle_bookmark(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let result = core.borrow_mut().toggle_bookmark_here();
+            match result {
+                Ok(now) => {
+                    persist_ui(&ui, &core);
+                    if let Some(number) = core.borrow().verse {
+                        sync_verse_row(&models, &core.borrow(), number as i32);
+                    }
+                    publish_bookmarks(&models, &core.borrow());
+                    publish_chrome(&ui, &core.borrow());
+                    let place = core.borrow().place_title();
+                    let message = if now { format!("Bookmarked {place}.") } else { format!("Bookmark removed from {place}.") };
+                    show_status(&ui, &mut core.borrow_mut(), message);
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_open_bookmark(move |index| {
+            let Some(ui) = weak.upgrade() else { return };
+            commit_note(&ui, &core, &models, false);
+            let key = core.borrow().settings.bookmarks.get(index as usize).cloned();
+            let Some((book, chapter, verse)) = key.as_deref().and_then(texts::split_key).map(|(b, c, v)| (b.to_string(), c, v)) else { return };
+            let result = core.borrow_mut().go_to_tracked(&book, chapter, Some(verse));
+            match result {
+                Ok(()) => {
+                    persist_ui(&ui, &core);
+                    ui.global::<Session>().set_view("read".into());
+                    after_nav(&ui, &core.borrow(), &models);
+                }
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_delete_bookmark(move |index| {
+            let Some(ui) = weak.upgrade() else { return };
+            {
+                let mut app = core.borrow_mut();
+                if (index as usize) < app.settings.bookmarks.len() {
+                    app.settings.bookmarks.remove(index as usize);
+                }
+            }
+            persist_ui(&ui, &core);
+            publish_verses(&models, &core.borrow());
+            publish_bookmarks(&models, &core.borrow());
+            publish_chrome(&ui, &core.borrow());
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_text_width(move |width| {
+            let Some(ui) = weak.upgrade() else { return };
+            if width < 100.0 || (core.borrow().text_width - width).abs() < 2.0 {
+                return;
+            }
+            core.borrow_mut().text_width = width;
+            publish_verses(&models, &core.borrow());
+            let _ = &ui;
         });
     }
     {
@@ -1168,18 +1749,78 @@ fn main() -> Result<(), slint::PlatformError> {
     }
     {
         let core = core.clone();
+        let models = models.clone();
         let weak = weak.clone();
         ui.global::<Session>().on_lookup_token(move |token| {
             let Some(ui) = weak.upgrade() else { return };
-            let sense = {
+            let (sense, word) = {
                 let app = core.borrow();
-                texts::lookup_in_tokens(&app.tokens, token as usize, &app.glossary)
+                let word = app.tokens.get(token as usize).map(|t| t.text.clone()).unwrap_or_default();
+                (texts::lookup_in_tokens(&app.tokens, token as usize, &app.glossary), word)
             };
             show_sense(&ui, &core, &sense, token);
+            show_word_hits(&ui, &core, &models, &word);
         });
     }
     {
         let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_word_popup(move |token| {
+            let Some(ui) = weak.upgrade() else { return };
+            let (sense, word) = {
+                let app = core.borrow();
+                let word = app.tokens.get(token as usize).map(|t| t.text.clone()).unwrap_or_default();
+                (texts::lookup_in_tokens(&app.tokens, token as usize, &app.glossary), word)
+            };
+            show_sense(&ui, &core, &sense, token);
+            show_word_hits(&ui, &core, &models, &word);
+            ui.global::<Session>().set_popup_open(true);
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_search_this_word(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let word = ui.global::<Session>().get_query_word().to_string();
+            show_word_hits(&ui, &core, &models, &word);
+            let session = ui.global::<Session>();
+            session.set_popup_open(false);
+            session.set_view("search".into());
+            let summary = core.borrow().search_summary.clone();
+            show_status(&ui, &mut core.borrow_mut(), format!("{word}: {summary}"));
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_play_intro(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            match twm_bible_native::intro::find() {
+                Some(path) => {
+                    if !twm_bible_native::intro::play(&path) {
+                        show_status(&ui, &mut core.borrow_mut(), "No video player was found for the intro.");
+                    }
+                }
+                None => show_status(&ui, &mut core.borrow_mut(), "The intro video is missing."),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_set_intro_on_start(move |on| {
+            let Some(ui) = weak.upgrade() else { return };
+            core.borrow_mut().settings.intro_on_startup = on;
+            persist_ui(&ui, &core);
+            publish_chrome(&ui, &core.borrow());
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
         let weak = weak.clone();
         ui.global::<Session>().on_lookup_typed(move |text| {
             let Some(ui) = weak.upgrade() else { return };
@@ -1190,6 +1831,7 @@ fn main() -> Result<(), slint::PlatformError> {
             }
             let sense = texts::archaic_for(&word, &core.borrow().glossary);
             show_sense(&ui, &core, &sense, -1);
+            show_word_hits(&ui, &core, &models, &word);
         });
     }
     {
@@ -1262,10 +1904,12 @@ fn main() -> Result<(), slint::PlatformError> {
     }
     {
         let core = core.clone();
+        let models = models.clone();
         let weak = weak.clone();
         ui.global::<Session>().on_bump_size(move |delta| {
             let Some(ui) = weak.upgrade() else { return };
             core.borrow_mut().bump_size(delta);
+            publish_verses(&models, &core.borrow());
             persist_ui(&ui, &core);
             publish_chrome(&ui, &core.borrow());
         });
@@ -1369,7 +2013,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 (hit.book_id.clone(), hit.chapter, hit.verse)
             });
             let Some((book, chapter, verse)) = hit else { return };
-            let result = core.borrow_mut().go_to(&book, chapter, Some(verse));
+            let result = core.borrow_mut().go_to_tracked(&book, chapter, Some(verse));
             match result {
                 Ok(()) => {
                     persist_ui(&ui, &core);
@@ -1388,7 +2032,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let Some(ui) = weak.upgrade() else { return };
             commit_note(&ui, &core, &models, false);
             let book = book.to_string();
-            let result = core.borrow_mut().go_to(&book, chapter as usize, Some(verse as usize));
+            let result = core.borrow_mut().go_to_tracked(&book, chapter as usize, Some(verse as usize));
             match result {
                 Ok(()) => {
                     persist_ui(&ui, &core);
@@ -1405,7 +2049,26 @@ fn main() -> Result<(), slint::PlatformError> {
         let weak = weak.clone();
         ui.global::<Session>().on_search_words(move |query| {
             let Some(ui) = weak.upgrade() else { return };
-            let message = core.borrow_mut().search_words(query.as_str());
+            let scope = {
+                let session = ui.global::<Session>();
+                let book = session.get_search_book().to_string();
+                if !book.trim().is_empty() {
+                    match texts::parse_reference(&book) {
+                        Some(parsed) => extras::Scope::Book(parsed.book_id.to_string()),
+                        None => {
+                            show_status(&ui, &mut core.borrow_mut(), "No book by that name in the book filter.");
+                            return;
+                        }
+                    }
+                } else {
+                    match session.get_search_scope().as_str() {
+                        "ot" => extras::Scope::Old,
+                        "nt" => extras::Scope::New,
+                        _ => extras::Scope::All,
+                    }
+                }
+            };
+            let message = core.borrow_mut().search_words(query.as_str(), &scope);
             publish_hits(&models, &core.borrow());
             publish_chrome(&ui, &core.borrow());
             show_status(&ui, &mut core.borrow_mut(), message);
@@ -1464,6 +2127,23 @@ fn main() -> Result<(), slint::PlatformError> {
         let status = timer_core.borrow().current_status(light);
         ui.global::<Session>().set_status(status.into());
     });
+
+    let intro = twm_bible_native::intro::find();
+    session_intro(&ui, intro.is_some());
+    let first_run = !core.borrow().settings.intro_seen;
+    let every_run = core.borrow().settings.intro_on_startup;
+    if intro.is_some() && (first_run || every_run) {
+        if first_run {
+            core.borrow_mut().settings.intro_seen = true;
+            persist_ui(&ui, &core);
+        }
+        let weak = ui.as_weak();
+        slint::Timer::single_shot(Duration::from_millis(800), move || {
+            if let Some(ui) = weak.upgrade() {
+                ui.global::<Session>().invoke_play_intro();
+            }
+        });
+    }
 
     ui.run()?;
     drop(timer);

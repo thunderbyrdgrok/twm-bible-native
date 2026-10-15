@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 pub const MARKS: &[&str] = &["cyan", "magenta", "amber", "mint", "red"];
 pub const FONT_MIN: i32 = 15;
 pub const FONT_MAX: i32 = 40;
+pub const GAP_MIN: i32 = 0;
+pub const GAP_MAX: i32 = 28;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Note {
@@ -50,6 +52,18 @@ pub struct Settings {
     pub highlights: BTreeMap<String, String>,
     #[serde(default)]
     pub imports: Vec<ImportRec>,
+    #[serde(default)]
+    pub bookmarks: Vec<String>,
+    #[serde(default = "default_gap")]
+    pub verse_gap: i32,
+    #[serde(default)]
+    pub compare_on: bool,
+    #[serde(default = "default_compare")]
+    pub compare_id: String,
+    #[serde(default)]
+    pub intro_seen: bool,
+    #[serde(default)]
+    pub intro_on_startup: bool,
 }
 
 fn default_theme() -> String {
@@ -66,6 +80,12 @@ fn default_active() -> String {
 }
 fn default_mark() -> String {
     "amber".to_string()
+}
+fn default_gap() -> i32 {
+    8
+}
+fn default_compare() -> String {
+    "asv".to_string()
 }
 fn default_book() -> String {
     "gen".to_string()
@@ -88,16 +108,23 @@ impl Default for Settings {
             notes: BTreeMap::new(),
             highlights: BTreeMap::new(),
             imports: Vec::new(),
+            bookmarks: Vec::new(),
+            verse_gap: default_gap(),
+            compare_on: false,
+            compare_id: default_compare(),
+            intro_seen: false,
+            intro_on_startup: false,
         }
     }
 }
 
 impl Settings {
     pub fn sanitize(&mut self) {
-        if !matches!(self.theme_mode.as_str(), "light" | "dark" | "system") {
+        if !matches!(self.theme_mode.as_str(), "light" | "dark" | "system" | "sepia" | "amber" | "forest" | "contrast") {
             self.theme_mode = default_theme();
         }
         self.font_size = self.font_size.clamp(FONT_MIN, FONT_MAX);
+        self.verse_gap = self.verse_gap.clamp(GAP_MIN, GAP_MAX);
         if !MARKS.contains(&self.mark_color.as_str()) {
             self.mark_color = default_mark();
         }
@@ -129,6 +156,17 @@ impl Settings {
             !note.text.is_empty() || !note.links.is_empty()
         });
         self.highlights.retain(|_, color| !color.is_empty());
+        if self.compare_id.is_empty() {
+            self.compare_id = default_compare();
+        }
+        let mut seen = Vec::new();
+        self.bookmarks.retain(|key| {
+            if key.split(':').count() != 3 || seen.contains(key) {
+                return false;
+            }
+            seen.push(key.clone());
+            true
+        });
     }
 }
 
@@ -220,11 +258,25 @@ mod tests {
         settings.sanitize();
         assert_eq!(settings.theme_mode, "system");
         assert_eq!(settings.font_size, FONT_MAX);
+        settings.verse_gap = 99;
+        settings.theme_mode = "sepia".into();
+        settings.sanitize();
+        assert_eq!(settings.verse_gap, GAP_MAX);
+        assert_eq!(settings.theme_mode, "sepia");
+        settings.theme_mode = "nope".into();
+        settings.sanitize();
         assert_eq!(settings.enabled, vec!["kjv".to_string()]);
         assert_eq!(settings.notes["john:3:16"].text, "loved");
         save(&path, &settings).unwrap();
         let loaded = load(&path);
         assert_eq!(loaded.notes["john:3:16"].links, vec!["gen:1:1".to_string()]);
+        assert!(!loaded.intro_seen);
+        let mut seen = loaded.clone();
+        seen.intro_seen = true;
+        seen.intro_on_startup = true;
+        save(&path, &seen).unwrap();
+        let again = load(&path);
+        assert!(again.intro_seen && again.intro_on_startup);
         let _ = fs::remove_dir_all(&dir);
     }
 }

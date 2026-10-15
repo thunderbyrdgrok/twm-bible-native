@@ -6,25 +6,29 @@ import "../fonts/Orbitron-Bold.ttf";
 
 export struct BookRow { id: string, name: string, chapters: int, current: bool, section: string }
 export struct ChapterRow { num: int, current: bool }
-export struct VerseRow { number: int, text: string, mark: string, has-note: bool, selected: bool }
+export struct VerseRow { number: int, text: string, mark: string, has-note: bool, selected: bool, bookmarked: bool, lines: int, text2: string, lines2: int, side: bool }
+export struct BookmarkRow { reference: string, snippet: string }
 export struct WordChip { label: string, token: int }
-export struct HitRow { reference: string, snippet: string }
-export struct VersionRow { id: string, label: string, enabled: bool, active: bool, builtin: bool }
+export struct HitSeg { text: string, hl: bool }
+export struct HitLine { segs: [HitSeg] }
+export struct HitRow { reference: string, snippet: string, lines: [HitLine] }
+export struct VersionRow { id: string, label: string, enabled: bool, active: bool, builtin: bool, compare: bool }
 export struct LiveRow { id: string, label: string, active: bool }
 export struct LinkChip { label: string, book-id: string, chapter: int, verse: int }
 
 export global Theme {
     in-out property <bool> light: false;
-    out property <color> bg: light ? #e7f3f6 : #05080e;
-    out property <color> panel: light ? #f4fbfc : #07131d;
-    out property <color> chrome: light ? #e8f6f8 : #040a10;
-    out property <color> cyan: light ? #087888 : #3df0ff;
-    out property <color> text: light ? #062028 : #e7fbff;
-    out property <color> muted: light ? #3e6270 : #93b0c0;
-    out property <color> line: light ? #086e8052 : #3df0ff48;
-    out property <color> line-soft: light ? #086e802e : #3df0ff2e;
-    out property <color> input: light ? #ffffff : #040a10;
-    out property <color> hover: light ? #0878881a : #3df0ff14;
+    in-out property <string> palette: "default";
+    out property <color> bg: palette == "sepia" ? #f1e6d0 : palette == "amber" ? #0c0905 : palette == "forest" ? #060d08 : palette == "contrast" ? #000000 : light ? #e7f3f6 : #05080e;
+    out property <color> panel: palette == "sepia" ? #f8f0de : palette == "amber" ? #17110a : palette == "forest" ? #0b1a10 : palette == "contrast" ? #0a0a0a : light ? #f4fbfc : #07131d;
+    out property <color> chrome: palette == "sepia" ? #eadcc0 : palette == "amber" ? #080603 : palette == "forest" ? #040a06 : palette == "contrast" ? #000000 : light ? #e8f6f8 : #040a10;
+    out property <color> cyan: palette == "sepia" ? #7a4b12 : palette == "amber" ? #ffb02e : palette == "forest" ? #5dff9d : palette == "contrast" ? #ffee00 : light ? #087888 : #3df0ff;
+    out property <color> text: palette == "sepia" ? #3b2a14 : palette == "amber" ? #fff0d6 : palette == "forest" ? #e6ffee : palette == "contrast" ? #ffffff : light ? #062028 : #e7fbff;
+    out property <color> muted: palette == "sepia" ? #7a6548 : palette == "amber" ? #b59a73 : palette == "forest" ? #8fb89d : palette == "contrast" ? #d0d0d0 : light ? #3e6270 : #93b0c0;
+    out property <color> line: palette == "sepia" ? #7a4b1252 : palette == "amber" ? #ffb02e48 : palette == "forest" ? #5dff9d48 : palette == "contrast" ? #ffee0090 : light ? #086e8052 : #3df0ff48;
+    out property <color> line-soft: palette == "sepia" ? #7a4b122e : palette == "amber" ? #ffb02e2e : palette == "forest" ? #5dff9d2e : palette == "contrast" ? #ffee0060 : light ? #086e802e : #3df0ff2e;
+    out property <color> input: palette == "sepia" ? #fffaf0 : palette == "amber" ? #080603 : palette == "forest" ? #040a06 : palette == "contrast" ? #000000 : light ? #ffffff : #040a10;
+    out property <color> hover: palette == "sepia" ? #7a4b121a : palette == "amber" ? #ffb02e14 : palette == "forest" ? #5dff9d14 : palette == "contrast" ? #ffee0026 : light ? #0878881a : #3df0ff14;
     out property <color> magenta: light ? #c2186a : #ff3d9a;
     out property <color> amber: light ? #9a6408 : #ffc14a;
     out property <color> ok: light ? #0c7a58 : #7dffe0;
@@ -55,6 +59,9 @@ export global Session {
     in-out property <string> desktop-appearance: "Desktop is dark";
     in-out property <string> resolved-theme: "SYSTEM · DARK";
     in-out property <int> reading-size: 21;
+    in-out property <int> verse-gap: 8;
+    in-out property <bool> reading-mode: false;
+    in-out property <int> focus-request: 0;
     in-out property <int> focus-verse: 0;
     in-out property <int> focus-token: 0;
     in-out property <int> chapter-token: 0;
@@ -71,6 +78,27 @@ export global Session {
     in-out property <[VersionRow]> versions;
     in-out property <[LiveRow]> live-versions;
     in-out property <[LinkChip]> links;
+    in-out property <[HitRow]> word-hits;
+    in-out property <[BookmarkRow]> bookmarks;
+    in-out property <bool> export-popup: false;
+    in-out property <string> export-from: "";
+    in-out property <string> export-to: "";
+    in-out property <bool> export-notes: false;
+    in-out property <bool> import-popup: false;
+    in-out property <string> import-text: "";
+    in-out property <string> search-scope: "all";
+    in-out property <string> search-book: "";
+    in-out property <bool> compare-on: false;
+    in-out property <string> compare-label: "";
+    in-out property <bool> can-back: false;
+    in-out property <bool> is-bookmarked: false;
+    in-out property <int> bookmark-count: 0;
+    in-out property <string> query-word: "";
+    in-out property <bool> popup-open: false;
+    in-out property <bool> ref-popup: false;
+    in-out property <bool> chapter-popup: false;
+    in-out property <bool> intro-available: false;
+    in-out property <bool> intro-on-start: false;
 
     callback commit-note();
     callback save-note();
@@ -95,6 +123,26 @@ export global Session {
     callback open-link(string, int, int);
     callback search-words(string);
     callback search-passage(string);
+    callback hit-width(float);
+    callback bump-gap(int);
+    callback export-passage(string);
+    callback export-backup();
+    callback import-backup();
+    callback import-apply(bool);
+    callback import-cancel();
+    callback set-compare(bool);
+    callback set-compare-version(string);
+    callback go-back();
+    callback toggle-bookmark();
+    callback open-bookmark(int);
+    callback delete-bookmark(int);
+    callback word-popup(int);
+    callback verse-word-click(int, float, float);
+    callback verse-word-hold(int, float, float);
+    callback text-width(float);
+    callback search-this-word();
+    callback play-intro();
+    callback set-intro-on-start(bool);
 }
 
 component Kicker inherits Text {
@@ -131,6 +179,7 @@ component Field inherits Rectangle {
     in-out property <string> text;
     callback accepted(string);
     height: 36px;
+    public function focus-input() { input.focus(); }
     background: Theme.input;
     border-width: 1px;
     border-color: Theme.line;
@@ -248,20 +297,22 @@ component VerseLine inherits Rectangle {
     in property <string> mark;
     in property <bool> has-note;
     in property <bool> selected;
+    in property <bool> bookmarked: false;
+    in property <string> body2;
+    in property <int> lines2: 0;
+    in property <bool> side: false;
+    in property <int> lines: 1;
+    private property <bool> fired: false;
     private property <int> token-watch: Session.focus-token;
-    private property <color> wash: mark == "magenta" ? (Theme.light ? #c2186a14 : #ff3d9a1e)
-        : mark == "amber" ? (Theme.light ? #9a640814 : #ffc14a1e)
-        : mark == "mint" ? (Theme.light ? #0c7a5814 : #7dffe01a)
-        : mark == "red" ? (Theme.light ? #d0122a14 : #ff2a331c)
-        : mark == "" ? transparent
-        : (Theme.light ? #08788814 : #3df0ff1a);
     private property <color> ink: mark == "magenta" ? Theme.magenta
         : mark == "amber" ? Theme.amber
         : mark == "mint" ? Theme.ok
         : mark == "red" ? Theme.red
         : Theme.cyan;
-    height: max(body.preferred-height, 22px) + 16px;
-    background: root.wash;
+    private property <length> h1: max(body.preferred-height, 22px);
+    private property <length> h2: root.body2 == "" ? 0px : body2-text.preferred-height;
+    private property <length> colw: (root.width - 84px - 24px) / 2;
+    height: (root.body2 == "" ? root.h1 : (root.side ? max(root.h1, root.h2) : root.h1 + 6px + root.h2)) + Session.verse-gap * 2px;
     border-width: root.selected ? 1px : 0px;
     border-color: Theme.cyan;
     // x is required. A fixed width with no x is centered, which drew this bar through the words.
@@ -272,6 +323,14 @@ component VerseLine inherits Rectangle {
         height: parent.height;
         visible: mark != "";
         background: root.ink;
+    }
+    Rectangle {
+        x: 20px;
+        y: 0px;
+        width: 7px;
+        height: 11px;
+        visible: root.bookmarked;
+        background: Theme.amber;
     }
     Rectangle {
         x: 12px;
@@ -295,24 +354,50 @@ component VerseLine inherits Rectangle {
     }
     body := Text {
         x: 70px;
-        y: 8px;
-        width: parent.width - 84px;
+        y: Session.verse-gap * 1px;
+        width: root.side && root.body2 != "" ? root.colw : parent.width - 84px;
         text: root.body;
-        wrap: word-wrap;
+        wrap: no-wrap;
         font-family: "Rajdhani";
         font-weight: 500;
         font-size: Session.reading-size * 1px;
-        color: Theme.text;
+        color: root.mark == "" ? Theme.text : root.ink;
     }
-    TouchArea {
+    body2-text := Text {
+        visible: root.body2 != "";
+        x: root.side ? 70px + root.colw + 24px : 70px;
+        y: root.side ? Session.verse-gap * 1px : Session.verse-gap * 1px + root.h1 + 6px;
+        width: root.side ? root.colw : parent.width - 84px;
+        text: root.body2;
+        wrap: no-wrap;
+        font-family: "Rajdhani";
+        font-weight: 500;
+        font-size: Session.reading-size * 1px;
+        color: Theme.muted;
+    }
+    Timer {
+        interval: 500ms;
+        running: touch.pressed && !root.fired && touch.pressed-x >= 72px;
+        triggered => {
+            root.fired = true;
+            Session.verse-word-hold(root.number, (touch.pressed-y - Session.verse-gap * 1px) / (body.preferred-height / max(root.lines, 1)), (touch.pressed-x - 70px) / 1px);
+        }
+    }
+    touch := TouchArea {
         width: parent.width;
         height: parent.height;
         mouse-cursor: pointer;
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down { root.fired = false; }
+        }
         clicked => {
-            if (self.pressed-x < 72px) {
+            if (root.fired) {
+                // The press already opened the word popup.
+            } else if (self.pressed-x < 72px) {
                 Session.mark-verse(root.number);
             } else {
-                Session.pick-verse(root.number);
+                Session.focus-request += 1;
+                Session.verse-word-click(root.number, (self.pressed-y - Session.verse-gap * 1px) / (body.preferred-height / max(root.lines, 1)), (self.pressed-x - 70px) / 1px);
             }
         }
     }
@@ -332,6 +417,15 @@ component WordButton inherits Rectangle {
     in property <string> label;
     in property <int> token;
     property <bool> on: Session.active-token == root.token;
+    property <bool> fired: false;
+    Timer {
+        interval: 500ms;
+        running: touch.pressed && !root.fired;
+        triggered => {
+            root.fired = true;
+            Session.word-popup(root.token);
+        }
+    }
     width: label-text.preferred-width + 14px;
     height: 26px;
     border-width: 1px;
@@ -346,21 +440,59 @@ component WordButton inherits Rectangle {
         horizontal-alignment: center;
         vertical-alignment: center;
     }
-    TouchArea {
+    touch := TouchArea {
         mouse-cursor: pointer;
-        clicked => { Session.lookup-token(root.token); }
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.down { root.fired = false; }
+        }
+        clicked => { if !root.fired { Session.lookup-token(root.token); } }
+    }
+}
+
+component WordStrip inherits Rectangle {
+    height: 44px;
+    TouchArea {
+        scroll-event(event) => {
+            word-flick.content-x = min(0px, max(word-flick.width - word-flick.content-width,
+                word-flick.content-x + event.delta-y + event.delta-x));
+            accept
+        }
+        word-flick := Flickable {
+            y: 0px;
+            height: 32px;
+            width: parent.width;
+            content-width: word-row.preferred-width;
+            word-row := HorizontalLayout {
+                spacing: 4px;
+                for word in Session.words: WordButton { label: word.label; token: word.token; }
+            }
+        }
+        Rectangle {
+            y: 36px;
+            height: 6px;
+            width: parent.width;
+            background: Theme.line-soft;
+            visible: word-flick.content-width > word-flick.width;
+            Rectangle {
+                height: 100%;
+                width: max(16px, parent.width * word-flick.width / max(word-flick.content-width, 1px));
+                x: (parent.width - self.width) * (-word-flick.content-x) / max(word-flick.content-width - word-flick.width, 1px);
+                background: Theme.cyan;
+            }
+        }
     }
 }
 
 component HitView inherits Rectangle {
     in property <string> reference;
     in property <string> snippet;
+    in property <[HitLine]> lines;
     in property <int> index;
-    height: max(snippet-text.preferred-height, 18px) + 36px;
+    height: hit-col.preferred-height;
     border-width: 1px;
     border-color: touch.has-hover ? Theme.cyan : Theme.line-soft;
     background: touch.has-hover ? Theme.hover : Theme.panel;
-    VerticalLayout {
+    hit-col := VerticalLayout {
         padding: 8px;
         spacing: 2px;
         Text {
@@ -370,13 +502,25 @@ component HitView inherits Rectangle {
             font-size: 15px;
             color: Theme.cyan;
         }
-        snippet-text := Text {
+        if root.lines.length == 0: Text {
             text: root.snippet;
             wrap: word-wrap;
             font-family: "Rajdhani";
             font-weight: 500;
             font-size: 15px;
             color: Theme.text;
+        }
+        for line in root.lines: HorizontalLayout {
+            spacing: 4px;
+            alignment: start;
+            for seg in line.segs: Text {
+                text: seg.text;
+                wrap: no-wrap;
+                font-family: "Rajdhani";
+                font-weight: seg.hl ? 700 : 500;
+                font-size: 15px;
+                color: seg.hl ? Theme.amber : Theme.text;
+            }
         }
     }
     touch := TouchArea {
@@ -391,6 +535,7 @@ component VersionLine inherits Rectangle {
     in property <bool> enabled;
     in property <bool> active;
     in property <bool> builtin;
+    in property <bool> compare;
     height: 42px;
     border-width: 1px;
     border-color: root.active ? Theme.cyan : Theme.line-soft;
@@ -414,6 +559,10 @@ component VersionLine inherits Rectangle {
             width: 64px;
             Btn { label: "USE"; clicked => { Session.set-version(root.id); } }
         }
+        Rectangle {
+            width: 64px;
+            Btn { label: "2ND"; active: root.compare; clicked => { Session.set-compare-version(root.id); } }
+        }
         if root.id != "kjv": Rectangle {
             width: 72px;
             Btn {
@@ -429,11 +578,39 @@ component VersionLine inherits Rectangle {
     }
 }
 
+component PopupFrame inherits Rectangle {
+    in property <length> box-width: 460px;
+    callback dismiss();
+    z: 10;
+    background: #00000088;
+    TouchArea { clicked => { root.dismiss(); } }
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if event.text == Key.Escape { root.dismiss(); return accept; }
+            reject
+        }
+        Rectangle {
+            width: min(root.box-width, root.width - 40px);
+            height: min(root.height - 40px, content.preferred-height + 32px);
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            TouchArea {}
+            content := VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                @children
+            }
+        }
+    }
+}
+
 component HomeView inherits Flickable {
     VerticalLayout {
         width: parent.width;
         padding: 36px;
-        spacing: 16px;
+        spacing: 22px;
         Kicker { text: "FIELD READER"; }
         HorizontalLayout {
             spacing: 10px;
@@ -452,24 +629,37 @@ component HomeView inherits Flickable {
                 background: Theme.cyan;
                 opacity: mod(animation-tick() / 1ms, 1200) < 600 ? 1 : 0;
             }
-        }
-        Text {
-            text: "The text stays on this computer. KJV 1611, standard spelling. Notes and highlights stay with the verse.";
-            wrap: word-wrap;
-            font-family: "Rajdhani";
-            font-weight: 600;
-            font-size: 18px;
-            color: Theme.text;
+            if Session.intro-available: Rectangle {
+                width: 30px;
+                height: 30px;
+                border-width: 1px;
+                border-color: intro-touch.has-hover ? Theme.cyan : Theme.line;
+                background: intro-touch.has-hover ? Theme.hover : transparent;
+                Path {
+                    x: 11px;
+                    y: 8px;
+                    width: 11px;
+                    height: 14px;
+                    commands: "M 0 0 L 11 7 L 0 14 Z";
+                    fill: Theme.cyan;
+                }
+                intro-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { Session.play-intro(); }
+                }
+            }
         }
         HorizontalLayout {
             spacing: 14px;
             Rectangle {
                 height: 250px;
-                horizontal-stretch: 1;
+                horizontal-stretch: 2;
                 background: Theme.panel;
                 border-width: 1px;
                 border-color: Theme.line;
+                HorizontalLayout {
                 VerticalLayout {
+                    horizontal-stretch: 1;
                     padding: 16px;
                     spacing: 8px;
                     Kicker { text: "CONTINUE"; }
@@ -491,6 +681,24 @@ component HomeView inherits Flickable {
                         vertical-stretch: 1;
                     }
                     Btn { label: "OPEN"; active: true; clicked => { Session.continue-reading(); } }
+                }
+                Rectangle { width: 1px; background: Theme.line-soft; }
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    padding: 16px;
+                    spacing: 8px;
+                    Kicker { text: "FIND A VERSE"; }
+                    Text {
+                        text: "Search by book, chapter and verse.";
+                        wrap: word-wrap;
+                        font-family: "Rajdhani";
+                        font-weight: 600;
+                        font-size: 16px;
+                        color: Theme.muted;
+                        vertical-stretch: 1;
+                    }
+                    Btn { label: "BOOK · CHAPTER · VERSE"; active: true; clicked => { Session.ref-popup = true; } }
+                }
                 }
             }
             Rectangle {
@@ -540,6 +748,68 @@ component HomeView inherits Flickable {
                     Kicker { text: "\{Session.mark-count} HIGHLIGHTS"; }
                     Rectangle { vertical-stretch: 1; }
                     Btn { label: "OPTIONS"; clicked => { Session.commit-note(); Session.view = "options"; } }
+                }
+            }
+        }
+    }
+}
+
+component BookmarksView inherits Rectangle {
+    VerticalLayout {
+        width: parent.width;
+        height: parent.height;
+        padding: 22px;
+        spacing: 12px;
+        Kicker { text: "BOOKMARKS  ·  \{Session.bookmark-count}"; }
+        if Session.bookmarks.length == 0: Text {
+            text: "No bookmarks yet. Select a verse in Read and press BOOKMARK (Ctrl+B).";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 16px;
+            color: Theme.muted;
+        }
+        Flickable {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+                spacing: 8px;
+                for mark[index] in Session.bookmarks: Rectangle {
+                    height: max(mark-text.preferred-height, 18px) + 44px;
+                    border-width: 1px;
+                    border-color: Theme.line-soft;
+                    background: Theme.panel;
+                    VerticalLayout {
+                        padding: 8px;
+                        spacing: 2px;
+                        Text {
+                            text: mark.reference;
+                            font-family: "Rajdhani";
+                            font-weight: 700;
+                            font-size: 15px;
+                            color: Theme.cyan;
+                        }
+                        mark-text := Text {
+                            text: mark.snippet;
+                            wrap: word-wrap;
+                            font-family: "Rajdhani";
+                            font-weight: 500;
+                            font-size: 15px;
+                            color: Theme.text;
+                        }
+                    }
+                    open-touch := TouchArea {
+                        width: parent.width - 100px;
+                        mouse-cursor: pointer;
+                        clicked => { Session.open-bookmark(index); }
+                    }
+                    Rectangle {
+                        x: parent.width - 92px;
+                        y: parent.height - 36px;
+                        width: 84px;
+                        height: 28px;
+                        Btn { label: "DELETE"; clicked => { Session.delete-bookmark(index); } }
+                    }
                 }
             }
         }
@@ -687,13 +957,7 @@ component Inspector inherits Rectangle {
             }
             Btn { label: "SAVE NOTE"; active: true; clicked => { Session.save-note(); } }
             Kicker { text: "WORDS"; }
-            Flickable {
-                height: 32px;
-                HorizontalLayout {
-                    spacing: 4px;
-                    for word in Session.words: WordButton { label: word.label; token: word.token; }
-                }
-            }
+            WordStrip {}
             lookup-field := Field {
                 placeholder: "Type a word";
                 accepted(value) => { Session.lookup-typed(value); }
@@ -717,6 +981,13 @@ component Inspector inherits Rectangle {
                 font-size: 15px;
                 color: Theme.muted;
             }
+            if Session.query-word != "": Kicker { text: "PASSAGES  ·  " + Session.query-word + "  ·  " + Session.search-summary; }
+            for hit[index] in Session.word-hits: HitView {
+                reference: hit.reference;
+                snippet: hit.snippet;
+                lines: hit.lines;
+                index: index;
+            }
             Rectangle { height: 12px; }
         }
     }
@@ -728,30 +999,43 @@ component ReadView inherits Rectangle {
     private property <length> chip-watch: Session.chapter-x;
     HorizontalLayout {
         height: parent.height;
-        BookColumn { width: 236px; }
-        Rectangle { width: 1px; background: Theme.line; }
+        alignment: Session.reading-mode ? center : stretch;
+        if !Session.reading-mode: BookColumn { width: 236px; }
+        if !Session.reading-mode: Rectangle { width: 1px; background: Theme.line; }
         VerticalLayout {
-            width: root.width - 556px;
+            width: Session.reading-mode ? min(root.width - 24px, 900px) : root.width - 556px;
             padding: 12px;
             spacing: 8px;
             HorizontalLayout {
                 spacing: 8px;
                 alignment: stretch;
-                Rectangle { width: 84px; Btn { label: "PREV"; clicked => { if Session.can-prev { Session.step(-1); } } } }
-                Text {
-                    text: Session.place-title;
+                Rectangle { width: 68px; Btn { label: "PREV"; clicked => { if Session.can-prev { Session.step(-1); } } } }
+                Rectangle {
                     horizontal-stretch: 1;
-                    font-family: "Orbitron";
-                    font-weight: 700;
-                    font-size: 16px;
-                    letter-spacing: 1px;
-                    color: Theme.cyan;
-                    horizontal-alignment: center;
-                    overflow: elide;
+                    background: title-touch.has-hover ? Theme.hover : transparent;
+                    Text {
+                        width: parent.width;
+                        height: parent.height;
+                        text: Session.place-title;
+                        font-family: "Orbitron";
+                        font-weight: 700;
+                        font-size: 16px;
+                        letter-spacing: 1px;
+                        color: Theme.cyan;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    title-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { Session.ref-popup = true; }
+                    }
                 }
-                Rectangle { width: 84px; Btn { label: "NEXT"; clicked => { if Session.can-next { Session.step(1); } } } }
+                if Session.reading-mode: Rectangle { width: 60px; Btn { label: "EXIT"; clicked => { Session.reading-mode = false; } } }
+                Rectangle { width: 92px; Btn { label: "CHAPTER"; clicked => { Session.chapter-popup = true; } } }
+                Rectangle { width: 68px; Btn { label: "NEXT"; clicked => { if Session.can-next { Session.step(1); } } } }
             }
-            HorizontalLayout {
+            if !Session.reading-mode: HorizontalLayout {
                 spacing: 8px;
                 alignment: stretch;
                 go-field := Field {
@@ -762,8 +1046,16 @@ component ReadView inherits Rectangle {
                 }
                 Rectangle { width: 64px; Btn { label: "GO"; active: true; clicked => { Session.search-passage(go-field.text); } } }
             }
+            if !Session.reading-mode: HorizontalLayout {
+                spacing: 6px;
+                Btn { label: "BACK"; clicked => { if Session.can-back { Session.go-back(); } } }
+                Btn { label: Session.compare-on ? "SPLIT · " + Session.compare-label : "SPLIT"; active: Session.compare-on; clicked => { Session.set-compare(!Session.compare-on); } }
+                Btn { label: "EXPORT"; clicked => { Session.export-popup = true; } }
+                Btn { label: "BOOKMARK"; active: Session.is-bookmarked; clicked => { Session.toggle-bookmark(); } }
+            }
             chap-flick := Flickable {
-                height: 32px;
+                height: Session.reading-mode ? 0px : 32px;
+                visible: !Session.reading-mode;
                 HorizontalLayout {
                     spacing: 4px;
                     for chapter in Session.chapters: ChapterChip {
@@ -773,7 +1065,8 @@ component ReadView inherits Rectangle {
                 }
             }
             live-flick := Flickable {
-                height: 32px;
+                height: Session.reading-mode ? 0px : 32px;
+                visible: !Session.reading-mode;
                 HorizontalLayout {
                     spacing: 6px;
                     for edition in Session.live-versions: Rectangle {
@@ -801,6 +1094,8 @@ component ReadView inherits Rectangle {
             }
             verse-flick := Flickable {
                 vertical-stretch: 1;
+                init => { Session.text-width((self.width - 84px) / 1px); }
+                changed width => { Session.text-width((self.width - 84px) / 1px); }
                 VerticalLayout {
                     width: parent.width;
                     spacing: 1px;
@@ -810,12 +1105,17 @@ component ReadView inherits Rectangle {
                         mark: verse.mark;
                         has-note: verse.has-note;
                         selected: verse.selected;
+                        bookmarked: verse.bookmarked;
+                        body2: verse.text2;
+                        lines2: verse.lines2;
+                        side: verse.side;
+                        lines: verse.lines;
                     }
                 }
             }
         }
-        Rectangle { width: 1px; background: Theme.line; }
-        Inspector { width: 318px; }
+        if !Session.reading-mode: Rectangle { width: 1px; background: Theme.line; }
+        if !Session.reading-mode: Inspector { width: 318px; }
     }
     changed scroll-watch => {
         if Session.focus-verse > 0 {
@@ -834,6 +1134,8 @@ component ReadView inherits Rectangle {
 
 component SearchView inherits Rectangle {
     property <string> mode: "passage";
+    changed width => { Session.hit-width((self.width - 44px - 16px) / 1px); }
+    init => { Session.hit-width((self.width - 44px - 16px) / 1px); }
     VerticalLayout {
         width: parent.width;
         height: parent.height;
@@ -849,6 +1151,20 @@ component SearchView inherits Rectangle {
             accepted(value) => {
                 if root.mode == "words" { Session.search-words(value); }
                 else { Session.search-passage(value); }
+            }
+        }
+        if root.mode == "words": VerticalLayout {
+            spacing: 8px;
+            Kicker { text: "Quote a phrase for an exact match. Several words match verses that hold all of them."; wrap: word-wrap; }
+            HorizontalLayout {
+                spacing: 8px;
+                Btn { label: "ALL"; active: Session.search-scope == "all"; clicked => { Session.search-scope = "all"; } }
+                Btn { label: "OLD TESTAMENT"; active: Session.search-scope == "ot"; clicked => { Session.search-scope = "ot"; } }
+                Btn { label: "NEW TESTAMENT"; active: Session.search-scope == "nt"; clicked => { Session.search-scope = "nt"; } }
+            }
+            Field {
+                placeholder: "Limit to one book (optional), such as John";
+                text <=> Session.search-book;
             }
         }
         Btn {
@@ -868,6 +1184,7 @@ component SearchView inherits Rectangle {
                 for hit[index] in Session.hits: HitView {
                     reference: hit.reference;
                     snippet: hit.snippet;
+                    lines: hit.lines;
                     index: index;
                 }
             }
@@ -895,8 +1212,33 @@ component OptionsView inherits Flickable {
             Rectangle { width: 120px; Btn { label: "LIGHT"; active: Session.theme-mode == "light"; clicked => { Session.set-theme("light"); } } }
             Rectangle { width: 140px; Btn { label: "SYSTEM"; active: Session.theme-mode == "system"; clicked => { Session.set-theme("system"); } } }
         }
+        HorizontalLayout {
+            spacing: 8px;
+            Rectangle { width: 110px; Btn { label: "SEPIA"; active: Session.theme-mode == "sepia"; clicked => { Session.set-theme("sepia"); } } }
+            Rectangle { width: 110px; Btn { label: "AMBER"; active: Session.theme-mode == "amber"; clicked => { Session.set-theme("amber"); } } }
+            Rectangle { width: 110px; Btn { label: "FOREST"; active: Session.theme-mode == "forest"; clicked => { Session.set-theme("forest"); } } }
+            Rectangle { width: 130px; Btn { label: "HIGH CONTRAST"; active: Session.theme-mode == "contrast"; clicked => { Session.set-theme("contrast"); } } }
+        }
         Kicker { text: Session.resolved-theme; }
         Kicker { text: Session.desktop-appearance; }
+        Kicker { text: "INTRO VIDEO"; }
+        Rectangle {
+            width: 320px;
+            Btn {
+                label: Session.intro-on-start ? "PLAY INTRO VIDEO ON STARTUP: ON" : "PLAY INTRO VIDEO ON STARTUP: OFF";
+                active: Session.intro-on-start;
+                clicked => { Session.set-intro-on-start(!Session.intro-on-start); }
+            }
+        }
+        Kicker { text: "SIDE-BY-SIDE"; }
+        Text {
+            text: "Use the 2ND button on a text below, or the SPLIT button in Read, to show it beside the main text. It sits beneath the main text when the window is narrow.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 16px;
+            color: Theme.text;
+        }
         Kicker { text: "TEXT SIZE"; }
         HorizontalLayout {
             spacing: 8px;
@@ -912,6 +1254,31 @@ component OptionsView inherits Flickable {
             }
             Rectangle { width: 48px; Btn { label: "+"; clicked => { Session.bump-size(1); } } }
         }
+        Kicker { text: "VERSE SPACING"; }
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: center;
+            Rectangle { width: 48px; Btn { label: "−"; clicked => { Session.bump-gap(-2); } } }
+            Text {
+                text: "\{Session.verse-gap}";
+                width: 48px;
+                font-family: "Share Tech Mono";
+                font-size: 16px;
+                color: Theme.cyan;
+                horizontal-alignment: center;
+            }
+            Rectangle { width: 48px; Btn { label: "+"; clicked => { Session.bump-gap(2); } } }
+        }
+        Kicker { text: "READING MODE"; }
+        Text {
+            text: "Distraction-free full screen: only the chapter and PREV, CHAPTER, NEXT. Press Esc or F11 to leave.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 16px;
+            color: Theme.text;
+        }
+        Rectangle { width: 220px; Btn { label: "ENTER READING MODE"; active: true; clicked => { Session.view = "read"; Session.reading-mode = true; } } }
         Kicker { text: "LIBRARY"; }
         Text {
             text: "KJV stays on. The other public-domain texts are already on this computer. An import has to be a JSON list of books you have the right to use.";
@@ -927,11 +1294,35 @@ component OptionsView inherits Flickable {
             enabled: edition.enabled;
             active: edition.active;
             builtin: edition.builtin;
+            compare: edition.compare;
         }
         Rectangle { width: 180px; Btn { label: "IMPORT JSON"; active: true; clicked => { Session.import-bible(); } } }
+        Kicker { text: "KEYBOARD SHORTCUTS"; }
+        Text {
+            text: "Ctrl+F  Search\nCtrl+G  Book, chapter and verse\nCtrl+B  Bookmark the selected verse\nLeft / Right, PgUp / PgDn  Previous or next chapter (Read view, no text box focused)\nAlt+Left  Back\nF11  Reading mode on or off\nEsc  Close a popup, or leave reading mode\nHold a word for 0.5 s  Word popup\nOn macOS, Cmd works in place of Ctrl.";
+            wrap: word-wrap;
+            font-family: "Share Tech Mono";
+            font-size: 13px;
+            color: Theme.text;
+        }
+        Kicker { text: "BACKUP"; }
+        Text {
+            text: "Save your notes, highlights and bookmarks to one JSON file, or restore them from one. Restoring asks whether to merge or replace.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 16px;
+            color: Theme.text;
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+            Rectangle { width: 180px; Btn { label: "EXPORT BACKUP"; active: true; clicked => { Session.export-backup(); } } }
+            Rectangle { width: 180px; Btn { label: "RESTORE BACKUP"; clicked => { Session.import-backup(); } } }
+        }
         Kicker { text: "ABOUT"; }
         Text {
-            text: "TWM Bible 1.0.0. Bundled texts are public domain: KJV 1611 in standard spelling, ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims. The app code is MIT.";
+            text: "TWM Bible 1.1.0. Bundled texts are public domain: KJV 1611 in standard spelling, ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims. The app code is MIT.";
             wrap: word-wrap;
             font-family: "Rajdhani";
             font-weight: 600;
@@ -950,24 +1341,237 @@ export component AppWindow inherits Window {
     min-width: 980px;
     min-height: 640px;
     background: Theme.bg;
+    full-screen: Session.reading-mode;
+    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup;
+    private property <int> focus-watch: Session.focus-request;
+    private property <string> view-watch: Session.view;
+    changed any-popup => { root-fs.focus(); }
+    changed focus-watch => { root-fs.focus(); }
+    changed view-watch => { root-fs.focus(); }
+
+    root-fs := FocusScope {
+        width: 100%;
+        height: 100%;
+        init => { self.focus(); }
+        capture-key-pressed(event) => {
+            if event.text == Key.Escape {
+                if Session.popup-open { Session.popup-open = false; }
+                else if Session.ref-popup { Session.ref-popup = false; }
+                else if Session.chapter-popup { Session.chapter-popup = false; }
+                else if Session.export-popup { Session.export-popup = false; }
+                else if Session.import-popup { Session.import-cancel(); }
+                else if Session.reading-mode { Session.reading-mode = false; }
+                self.focus();
+                return accept;
+            }
+            if event.text == Key.F11 {
+                Session.view = "read";
+                Session.reading-mode = !Session.reading-mode;
+                return accept;
+            }
+            if event.modifiers.control || event.modifiers.meta {
+                if event.text == "f" || event.text == "\u{6}" { Session.commit-note(); Session.view = "search"; return accept; }
+                if event.text == "g" || event.text == "\u{7}" { Session.ref-popup = true; return accept; }
+                if event.text == "b" || event.text == "\u{2}" { Session.toggle-bookmark(); return accept; }
+            }
+            reject
+        }
+        key-pressed(event) => {
+            if Session.view == "read" && !root.any-popup {
+                if event.modifiers.alt && event.text == Key.LeftArrow { if Session.can-back { Session.go-back(); } return accept; }
+                if event.text == Key.LeftArrow || event.text == Key.PageUp { if Session.can-prev { Session.step(-1); } return accept; }
+                if event.text == Key.RightArrow || event.text == Key.PageDown { if Session.can-next { Session.step(1); } return accept; }
+            }
+            reject
+        }
+
 
     Rectangle {
         y: 0;
         width: 100%;
         height: 260px;
-        visible: !Theme.light;
+        visible: !Theme.light && Theme.palette == "default";
         background: @linear-gradient(180deg, #3df0ff16, #00000000);
     }
     Rectangle {
         y: 0;
         width: 100%;
         height: 260px;
-        visible: Theme.light;
+        visible: Theme.light && Theme.palette == "default";
         background: @linear-gradient(180deg, #08788818, #00000000);
     }
 
-    VerticalLayout {
+    if Session.export-popup: PopupFrame {
+        dismiss => { Session.export-popup = false; }
+        Kicker { text: "EXPORT  ·  " + Session.place-title; }
+        Text {
+            text: "Leave both boxes empty for the whole chapter, or give a verse range. Open the web page and print it for a PDF, or save a PDF directly.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 15px;
+            color: Theme.muted;
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Field { placeholder: "From verse"; text <=> Session.export-from; }
+            Field { placeholder: "To verse"; text <=> Session.export-to; }
+        }
+        Btn { label: Session.export-notes ? "INCLUDE MY NOTES: YES" : "INCLUDE MY NOTES: NO"; active: Session.export-notes; clicked => { Session.export-notes = !Session.export-notes; } }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: "PDF"; active: true; clicked => { Session.export-passage("pdf"); } }
+            Btn { label: "WEB PAGE"; clicked => { Session.export-passage("html"); } }
+            Btn { label: "TEXT"; clicked => { Session.export-passage("text"); } }
+            Btn { label: "CLOSE"; clicked => { Session.export-popup = false; } }
+        }
+    }
+    if Session.import-popup: PopupFrame {
+        dismiss => { Session.import-cancel(); }
+        Kicker { text: "RESTORE BACKUP"; }
+        Text {
+            text: "This file holds " + Session.import-text;
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 600;
+            font-size: 16px;
+            color: Theme.text;
+        }
+        Text {
+            text: "MERGE keeps what you have and adds what is missing. REPLACE swaps your notes, highlights and bookmarks for the file's. A copy of your current settings is saved first.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 500;
+            font-size: 15px;
+            color: Theme.muted;
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: "MERGE"; active: true; clicked => { Session.import-apply(false); } }
+            Btn { label: "REPLACE"; clicked => { Session.import-apply(true); } }
+            Btn { label: "CANCEL"; clicked => { Session.import-cancel(); } }
+        }
+    }
+    if Session.ref-popup: PopupFrame {
+        dismiss => { Session.ref-popup = false; }
+        Kicker { text: "OPEN A PASSAGE"; }
+        ref-field := Field {
+            placeholder: "John 3:16";
+            init => { self.focus-input(); }
+            accepted(value) => { Session.search-passage(value); Session.ref-popup = false; }
+        }
+        Kicker { text: "OR PICK A BOOK"; }
+        Flickable {
+            height: 200px;
+            GridLayout {
+                spacing: 4px;
+                for book[i] in Session.books: Rectangle {
+                    row: floor(i / 3);
+                    col: mod(i, 3);
+                    height: 28px;
+                    border-width: 1px;
+                    border-color: book.current ? Theme.cyan : Theme.line-soft;
+                    background: book-touch.has-hover ? Theme.hover : transparent;
+                    Text {
+                        text: book.name;
+                        font-family: "Rajdhani";
+                        font-weight: 600;
+                        font-size: 14px;
+                        color: book.current ? Theme.cyan : Theme.text;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    book-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { Session.select-book(book.id); Session.ref-popup = false; }
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: "GO"; active: true; clicked => { Session.search-passage(ref-field.text); Session.ref-popup = false; } }
+            Btn { label: "CLOSE"; clicked => { Session.ref-popup = false; } }
+        }
+    }
+    if Session.chapter-popup: PopupFrame {
+        box-width: 420px;
+        dismiss => { Session.chapter-popup = false; }
+        Kicker { text: "CHAPTER  ·  " + Session.place-title; }
+        Flickable {
+            height: 220px;
+            GridLayout {
+                spacing: 4px;
+                for chapter[i] in Session.chapters: Rectangle {
+                    row: floor(i / 8);
+                    col: mod(i, 8);
+                    height: 32px;
+                    border-width: 1px;
+                    border-color: chapter.current ? Theme.cyan : Theme.line-soft;
+                    background: chap-touch.has-hover || chapter.current ? Theme.hover : transparent;
+                    Text {
+                        text: "\{chapter.num}";
+                        color: chapter.current ? Theme.cyan : Theme.text;
+                        font-family: "Share Tech Mono";
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    chap-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { Session.select-chapter(chapter.num); Session.chapter-popup = false; }
+                    }
+                }
+            }
+        }
+        Btn { label: "CLOSE"; clicked => { Session.chapter-popup = false; } }
+    }
+    if Session.popup-open: Rectangle {
+        z: 10;
+        background: #00000088;
+        TouchArea { clicked => { Session.popup-open = false; } }
         Rectangle {
+            width: min(460px, parent.width - 40px);
+            height: min(parent.height - 40px, pop-col.preferred-height + 32px);
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            TouchArea {}
+            pop-col := VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                Kicker { text: "WORD  ·  " + Session.sense-word; }
+                Kicker { text: "ARCHAIC"; }
+                Text {
+                    text: Session.sense-text;
+                    wrap: word-wrap;
+                    font-family: "Rajdhani";
+                    font-weight: 500;
+                    font-size: 16px;
+                    color: Theme.text;
+                }
+                Kicker { text: "MODERN"; }
+                Text {
+                    text: Session.modern-text == "" ? "No modern definition yet." : Session.modern-text;
+                    wrap: word-wrap;
+                    font-family: "Rajdhani";
+                    font-weight: 500;
+                    font-size: 16px;
+                    color: Theme.muted;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Btn { label: "COPY VERSE"; clicked => { Session.copy-verse(); } }
+                    Btn { label: "SEARCH THIS WORD"; active: true; clicked => { Session.search-this-word(); } }
+                    Btn { label: "CLOSE"; clicked => { Session.popup-open = false; } }
+                }
+            }
+        }
+    }
+
+    VerticalLayout {
+        if !Session.reading-mode: Rectangle {
             height: 74px;
             background: Theme.chrome;
             HorizontalLayout {
@@ -996,6 +1600,7 @@ export component AppWindow inherits Window {
                 Rectangle { horizontal-stretch: 1; }
                 Rectangle { width: 88px; Btn { label: "HOME"; active: Session.view == "home"; clicked => { Session.commit-note(); Session.view = "home"; } } }
                 Rectangle { width: 88px; Btn { label: "READ"; active: Session.view == "read"; clicked => { Session.commit-note(); Session.view = "read"; } } }
+                Rectangle { width: 118px; Btn { label: "BOOKMARKS"; active: Session.view == "bookmarks"; clicked => { Session.commit-note(); Session.view = "bookmarks"; } } }
                 Rectangle { width: 100px; Btn { label: "SEARCH"; active: Session.view == "search"; clicked => { Session.commit-note(); Session.view = "search"; } } }
                 Rectangle { width: 110px; Btn { label: "OPTIONS"; active: Session.view == "options"; clicked => { Session.commit-note(); Session.view = "options"; } } }
                 Rectangle {
@@ -1039,9 +1644,10 @@ export component AppWindow inherits Window {
             if Session.view == "home": HomeView { width: 100%; height: 100%; }
             if Session.view == "read": ReadView { width: 100%; height: 100%; }
             if Session.view == "search": SearchView { width: 100%; height: 100%; }
+            if Session.view == "bookmarks": BookmarksView { width: 100%; height: 100%; }
             if Session.view == "options": OptionsView { width: 100%; height: 100%; }
         }
-        Rectangle {
+        if !Session.reading-mode: Rectangle {
             height: 28px;
             background: Theme.chrome;
             Rectangle { height: 1px; width: 100%; background: Theme.line; }
@@ -1059,5 +1665,6 @@ export component AppWindow inherits Window {
                 overflow: elide;
             }
         }
+    }
     }
 }

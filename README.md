@@ -2,6 +2,10 @@
 
 Native desktop reader for the TWM Bible texts. It is a Rust and Slint application. The Chromium edition, TWM Bible App, stays installed beside it and keeps its own notes.
 
+## What's new
+
+See [CHANGELOG.md](CHANGELOG.md). Version 1.1.0 adds side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
+
 ## Install
 
 Download the file for your system from the GitHub Releases page.
@@ -17,7 +21,7 @@ Download the file for your system from the GitHub Releases page.
 - Windows: `cargo build --release`, then `makensis packaging\windows\installer.nsi`
 - macOS: `./packaging/macos/build-dmg.sh`
 
-Pushing a tag such as `v1.0.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
+Pushing a tag such as `v1.1.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
 
 ## Run from source
 
@@ -45,7 +49,7 @@ Dark and light use the field-journal palette: dark `#05080e` / `#3df0ff`, light 
 
 Notes, highlights, and imported Bibles are stored in `~/.local/state/twm-bible-slint/` on Linux, `%LOCALAPPDATA%\twm-bible-slint` on Windows, and `~/Library/Application Support/twm-bible-slint` on macOS. That store is separate from the browser app’s localStorage. An import copies a JSON file into `imports/` and leaves the original in place. Dropping an import deletes only that copy.
 
-The bundled JSON files in `data/` are copies of the public-domain texts from `twm-bible 1.0.0`. The app looks for them in `$TWM_BIBLE_DATA`, then `data/` beside or above the executable, `../share/twm-bible-native/data` (Linux packages), and `../Resources/data` (macOS bundle).
+The bundled JSON files in `data/` are copies of the public-domain texts from `twm-bible 1.0.0`. The app looks for them in `$TWM_BIBLE_DATA`, then `data/` beside or above the executable, `../share/twm-bible-native/data` (Linux packages), and `../Resources/data` (macOS bundle). The intro video `assets/twmintro.mp4` is found in the same places (`assets/` beside `data/`).
 
 ## License
 

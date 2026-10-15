@@ -55,7 +55,7 @@ jobs:
           Copy-Item target\release\twm-bible-native.exe "dist\twm-bible-native-$version-windows-x64.exe"
           makensis /DVERSION=$version /DSRCDIR=$PWD /DEXE=$PWD\target\release\twm-bible-native.exe `
             /DOUTFILE=$PWD\dist\TWM-Bible-$version-windows-x64-setup.exe packaging\windows\installer.nsi
-          Compress-Archive -Path target\release\twm-bible-native.exe, data, LICENSE `
+          Compress-Archive -Path target\release\twm-bible-native.exe, data, assets, LICENSE `
             -DestinationPath "dist\twm-bible-native-$version-windows-x64-portable.zip"
           Remove-Item "dist\twm-bible-native-$version-windows-x64.exe"
       - uses: actions/upload-artifact@v4

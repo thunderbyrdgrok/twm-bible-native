@@ -1,11 +1,11 @@
 ; NSIS installer for TWM Bible (Windows x64).
-; Build: makensis /DVERSION=1.0.0 /DSRCDIR=<repo root> /DEXE=<path to twm-bible-native.exe> /DOUTFILE=<out.exe> packaging\windows\installer.nsi
+; Build: makensis /DVERSION=1.1.0 /DSRCDIR=<repo root> /DEXE=<path to twm-bible-native.exe> /DOUTFILE=<out.exe> packaging\windows\installer.nsi
 Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.0.0"
+  !define VERSION "1.1.0"
 !endif
 !ifndef SRCDIR
   !define SRCDIR "..\.."
@@ -48,6 +48,8 @@ Section "Install"
   File "${SRCDIR}\fonts\OFL.txt"
   SetOutPath "$INSTDIR\data"
   File "${SRCDIR}\data\*.json"
+  SetOutPath "$INSTDIR\assets"
+  File "${SRCDIR}\assets\twmintro.mp4"
   SetOutPath "$INSTDIR"
 
   CreateShortCut "$SMPROGRAMS\TWM Bible.lnk" "$INSTDIR\twm-bible-native.exe" "" "$INSTDIR\twm-bible.ico"
@@ -69,6 +71,7 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\TWM Bible.lnk"
   Delete "$DESKTOP\TWM Bible.lnk"
   RMDir /r "$INSTDIR\data"
+  RMDir /r "$INSTDIR\assets"
   Delete "$INSTDIR\twm-bible-native.exe"
   Delete "$INSTDIR\twm-bible.ico"
   Delete "$INSTDIR\LICENSE"

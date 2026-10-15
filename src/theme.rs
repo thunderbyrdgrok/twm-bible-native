@@ -35,9 +35,17 @@ pub fn parse_gsettings(text: &str) -> Option<Scheme> {
     })
 }
 
+pub const PALETTES: &[&str] = &["sepia", "amber", "forest", "contrast"];
+
+/// Palette name the UI uses for its colours. Dark, light, and system use the default one.
+pub fn palette_of(mode: &str) -> &'static str {
+    PALETTES.iter().copied().find(|name| *name == mode).unwrap_or("default")
+}
+
 pub fn resolved_light(mode: &str, system: Scheme) -> bool {
     match mode {
-        "light" => true,
+        "light" | "sepia" => true,
+        "amber" | "forest" | "contrast" => false,
         "dark" => false,
         _ => matches!(system, Scheme::Light),
     }
@@ -47,6 +55,7 @@ pub fn theme_label(mode: &str, light: bool) -> String {
     match mode {
         "light" => "LIGHT".to_string(),
         "dark" => "DARK".to_string(),
+        name if PALETTES.contains(&name) => name.to_uppercase(),
         _ => format!("SYSTEM · {}", if light { "LIGHT" } else { "DARK" }),
     }
 }
@@ -129,5 +138,14 @@ mod tests {
         assert!(!resolved_light("desktop", Scheme::NoPreference));
         assert_eq!(theme_label("system", false), "SYSTEM · DARK");
         assert_eq!(theme_label("light", true), "LIGHT");
+    }
+
+    #[test]
+    fn palettes() {
+        assert_eq!(palette_of("sepia"), "sepia");
+        assert_eq!(palette_of("dark"), "default");
+        assert!(resolved_light("sepia", Scheme::Dark));
+        assert!(!resolved_light("forest", Scheme::Light));
+        assert_eq!(theme_label("contrast", false), "CONTRAST");
     }
 }

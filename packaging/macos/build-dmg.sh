@@ -13,6 +13,7 @@ rm -rf target/macos; mkdir -p "$B/Contents/MacOS" "$B/Contents/Resources"
 lipo -create -output "$B/Contents/MacOS/$APP" \
   "target/aarch64-apple-darwin/release/$APP" "target/x86_64-apple-darwin/release/$APP"
 cp -r data "$B/Contents/Resources/data"
+mkdir -p "$B/Contents/Resources/assets"; cp assets/twmintro.mp4 "$B/Contents/Resources/assets/"
 cp packaging/macos/icon.icns "$B/Contents/Resources/icon.icns"
 sed "s/@VERSION@/$VERSION/g" packaging/macos/Info.plist > "$B/Contents/Info.plist"
 # Ad-hoc signature so Apple Silicon will launch it (not notarized).

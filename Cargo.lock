@@ -4668,7 +4668,7 @@ checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "twm-bible-native"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "arboard",
  "chrono",
@@ -4678,6 +4678,7 @@ dependencies = [
  "serde_json",
  "slint",
  "slint-build",
+ "ttf-parser",
  "unicode-normalization",
  "winresource",
 ]
