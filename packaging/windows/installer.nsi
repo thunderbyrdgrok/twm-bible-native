@@ -1,11 +1,11 @@
 ; NSIS installer for TWM Bible (Windows x64).
-; Build: makensis /DVERSION=1.1.1 /DSRCDIR=<repo root> /DEXE=<path to twm-bible-native.exe> /DOUTFILE=<out.exe> packaging\windows\installer.nsi
+; Build: makensis /DVERSION=1.2.0 /DSRCDIR=<repo root> /DEXE=<path to twm-bible-native.exe> /DOUTFILE=<out.exe> packaging\windows\installer.nsi
 Unicode true
 !include "MUI2.nsh"
 !include "x64.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.1.1"
+  !define VERSION "1.2.0"
 !endif
 !ifndef SRCDIR
   !define SRCDIR "..\.."

@@ -94,6 +94,12 @@ export global Session {
     in-out property <bool> is-bookmarked: false;
     in-out property <int> bookmark-count: 0;
     in-out property <string> query-word: "";
+    in-out property <bool> lookup-busy: false;
+    // Where the word popup should sit: just under the line of text that was pressed.
+    in-out property <bool> popup-anchored: false;
+    in-out property <length> popup-x: 0px;
+    in-out property <length> popup-bottom: 0px;
+    in-out property <length> popup-line: 0px;
     in-out property <bool> popup-open: false;
     in-out property <bool> ref-popup: false;
     in-out property <bool> chapter-popup: false;
@@ -375,11 +381,22 @@ component VerseLine inherits Rectangle {
         font-size: Session.reading-size * 1px;
         color: Theme.muted;
     }
+    // Remember where the press landed (window coordinates) so the word popup can open just
+    // below that line of text instead of covering it.
+    function anchor() {
+        let lh = body.preferred-height / max(root.lines, 1);
+        let row = floor((touch.pressed-y - Session.verse-gap * 1px) / lh);
+        Session.popup-anchored = true;
+        Session.popup-x = touch.absolute-position.x + touch.pressed-x;
+        Session.popup-line = lh;
+        Session.popup-bottom = touch.absolute-position.y + Session.verse-gap * 1px + (max(row, 0) + 1) * lh;
+    }
     Timer {
         interval: 500ms;
         running: touch.pressed && !root.fired && touch.pressed-x >= 72px;
         triggered => {
             root.fired = true;
+            root.anchor();
             Session.verse-word-hold(root.number, (touch.pressed-y - Session.verse-gap * 1px) / (body.preferred-height / max(root.lines, 1)), (touch.pressed-x - 70px) / 1px);
         }
     }
@@ -397,6 +414,7 @@ component VerseLine inherits Rectangle {
                 Session.mark-verse(root.number);
             } else {
                 Session.focus-request += 1;
+                root.anchor();
                 Session.verse-word-click(root.number, (self.pressed-y - Session.verse-gap * 1px) / (body.preferred-height / max(root.lines, 1)), (self.pressed-x - 70px) / 1px);
             }
         }
@@ -423,6 +441,7 @@ component WordButton inherits Rectangle {
         running: touch.pressed && !root.fired;
         triggered => {
             root.fired = true;
+            Session.popup-anchored = false;
             Session.word-popup(root.token);
         }
     }
@@ -606,6 +625,686 @@ component PopupFrame inherits Rectangle {
     }
 }
 
+// Pre-rendered loop of the Grok Bot model (assets/grokbot). Slint has no 3D, so the
+// animation plays as a frame sequence, only while a definition lookup is in flight.
+component GrokBotSprite inherits Rectangle {
+    in property <bool> busy: false;
+    private property <int> frame: 0;
+    private property <[image]> frames: [
+        @image-url("../assets/grokbot/grokbot_00.png"),
+        @image-url("../assets/grokbot/grokbot_01.png"),
+        @image-url("../assets/grokbot/grokbot_02.png"),
+        @image-url("../assets/grokbot/grokbot_03.png"),
+        @image-url("../assets/grokbot/grokbot_04.png"),
+        @image-url("../assets/grokbot/grokbot_05.png"),
+        @image-url("../assets/grokbot/grokbot_06.png"),
+        @image-url("../assets/grokbot/grokbot_07.png"),
+        @image-url("../assets/grokbot/grokbot_08.png"),
+        @image-url("../assets/grokbot/grokbot_09.png"),
+        @image-url("../assets/grokbot/grokbot_10.png"),
+        @image-url("../assets/grokbot/grokbot_11.png"),
+        @image-url("../assets/grokbot/grokbot_12.png"),
+        @image-url("../assets/grokbot/grokbot_13.png"),
+        @image-url("../assets/grokbot/grokbot_14.png"),
+        @image-url("../assets/grokbot/grokbot_15.png"),
+        @image-url("../assets/grokbot/grokbot_16.png"),
+        @image-url("../assets/grokbot/grokbot_17.png"),
+        @image-url("../assets/grokbot/grokbot_18.png"),
+        @image-url("../assets/grokbot/grokbot_19.png"),
+        @image-url("../assets/grokbot/grokbot_20.png"),
+        @image-url("../assets/grokbot/grokbot_21.png"),
+        @image-url("../assets/grokbot/grokbot_22.png"),
+        @image-url("../assets/grokbot/grokbot_23.png"),
+        @image-url("../assets/grokbot/grokbot_24.png"),
+        @image-url("../assets/grokbot/grokbot_25.png"),
+        @image-url("../assets/grokbot/grokbot_26.png"),
+        @image-url("../assets/grokbot/grokbot_27.png"),
+        @image-url("../assets/grokbot/grokbot_28.png"),
+        @image-url("../assets/grokbot/grokbot_29.png")
+    ];
+    // The frames run right up to their top edge (cloud and halo), so the image sits 8px
+    // below the top of this box. That keeps it clear of the popup border.
+    width: 84px;
+    height: 80px;
+    Timer {
+        interval: 110ms;
+        running: root.busy;
+        triggered => { root.frame = mod(root.frame + 1, 30); }
+    }
+    Image {
+        x: 0px;
+        y: 8px;
+        width: 100%;
+        height: parent.height - 8px;
+        image-fit: contain;
+        source: root.frames[root.frame];
+    }
+}
+
+// ------------------------------------------------------------------ Outreach
+
+export struct ContactRow { id: int, name: string, phone: string, email: string, prayer: string, initials: string, photo: image, has-photo: bool, has-email: bool, in-pool: bool, fulfilled: bool }
+export struct CalCell { day: int, in-month: bool, today: bool, selected: bool, count: int, t1: string, t2: string }
+export struct EvRow { id: int, title: string, when: string, details: string, repeat: string }
+
+export global Outreach {
+    // planner
+    in-out property <string> tab: "contacts";
+    in-out property <string> hint: "";
+    in-out property <string> month-label: "";
+    in-out property <string> selected-label: "";
+    in-out property <int> contact-count: 0;
+    in-out property <[ContactRow]> contacts;
+    in-out property <[ContactRow]> pool-list;
+    in-out property <[CalCell]> cells;
+    in-out property <[EvRow]> day-events;
+    in-out property <[EvRow]> upcoming;
+    // home prayer card
+    in-out property <bool> pr-has: false;
+    in-out property <string> pr-name: "";
+    in-out property <string> pr-request: "";
+    in-out property <string> pr-initials: "";
+    in-out property <image> pr-photo;
+    in-out property <bool> pr-has-photo: false;
+    in-out property <int> pr-pool-size: 0;
+    // contact card popup
+    in-out property <bool> card-open: false;
+    in-out property <int> c-id: -1;
+    in-out property <string> c-name: "";
+    in-out property <string> c-phone: "";
+    in-out property <string> c-email: "";
+    in-out property <string> c-prayer: "";
+    in-out property <bool> c-fulfilled: false;
+    in-out property <bool> c-pool: false;
+    in-out property <image> c-photo;
+    in-out property <bool> c-has-photo: false;
+    in-out property <string> c-initials: "?";
+    in-out property <string> c-error: "";
+    // event popup
+    in-out property <bool> event-open: false;
+    in-out property <int> e-id: -1;
+    in-out property <string> e-title: "";
+    in-out property <string> e-date: "";
+    in-out property <string> e-time: "";
+    in-out property <string> e-details: "";
+    in-out property <string> e-repeat: "none";
+    in-out property <[bool]> e-days: [false, false, false, false, false, false, false];
+    in-out property <string> e-note: "";
+    in-out property <string> e-error: "";
+    // delete confirmation
+    in-out property <bool> confirm-open: false;
+    in-out property <string> confirm-text: "";
+
+    callback open();
+    callback prev-month();
+    callback next-month();
+    callback this-month();
+    callback select-day(int);
+    callback add-contact();
+    callback edit-contact(int);
+    callback pick-photo();
+    callback clear-photo();
+    callback save-contact();
+    callback ask-delete-contact();
+    callback copy-contact(int);
+    callback email-contact(int);
+    callback toggle-pool(int);
+    callback add-event-for(int);
+    callback add-event-day();
+    callback edit-event(int);
+    callback save-event();
+    callback ask-delete-event();
+    callback set-repeat(string);
+    callback toggle-day(int);
+    callback step-date(int);
+    callback step-time(int);
+    callback confirm-yes();
+    callback close-popups();
+}
+
+component Icon inherits Rectangle {
+    in property <string> kind;
+    in property <color> ink: Theme.muted;
+    in property <bool> filled: false;
+    width: 22px;
+    height: 22px;
+    Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        commands: root.kind == "copy" ? "M 9 9 H 20 V 21 H 9 Z M 5.5 15 H 4 V 3 H 15 V 5.5"
+            : root.kind == "mail" ? "M 3 6 H 21 V 19 H 3 Z M 3.5 7 L 12 14 L 20.5 7"
+            : root.kind == "cal" ? "M 3 5 H 21 V 21 H 3 Z M 3 10 H 21 M 8 2 V 7 M 16 2 V 7 M 12 12.5 V 18.5 M 9 15.5 H 15"
+            : root.kind == "plus" ? "M 12 4 V 20 M 4 12 H 20"
+            : "M 11.3 1.8 C 7.5 4.5 4.2 9 3.8 14.5 L 6.2 18.2 H 11.3 Z M 12.7 1.8 C 16.5 4.5 19.8 9 20.2 14.5 L 17.8 18.2 H 12.7 Z M 8 7.5 L 8.6 13.5 M 16 7.5 L 15.4 13.5 M 6.2 18.2 L 6.6 22.2 H 11.3 V 18.2 M 17.8 18.2 L 17.4 22.2 H 12.7 V 18.2";
+        stroke: root.ink;
+        stroke-width: 1.7px;
+        stroke-line-cap: round;
+        stroke-line-join: round;
+        fill: root.filled ? root.ink.with-alpha(0.32) : transparent;
+    }
+}
+
+component IconBtn inherits Rectangle {
+    in property <string> kind;
+    in property <string> tip;
+    in property <bool> on: false;
+    callback clicked();
+    width: 30px;
+    height: 30px;
+    border-width: 1px;
+    border-color: touch.has-hover || root.on ? Theme.cyan : Theme.line-soft;
+    background: touch.has-hover ? Theme.hover : transparent;
+    Icon {
+        kind: root.kind;
+        filled: root.on;
+        ink: touch.has-hover || root.on ? Theme.cyan : Theme.muted;
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+        changed has-hover => { Outreach.hint = self.has-hover ? root.tip : ""; }
+    }
+}
+
+component DangerBtn inherits Rectangle {
+    in property <string> label;
+    callback clicked();
+    height: 32px;
+    border-width: 1px;
+    border-color: Theme.red;
+    background: dtouch.has-hover ? Theme.red.with-alpha(0.18) : transparent;
+    Text {
+        text: root.label;
+        color: Theme.red;
+        font-family: "Rajdhani";
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 1px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    dtouch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component Avatar inherits Rectangle {
+    in property <image> photo;
+    in property <bool> has-photo;
+    in property <string> initials;
+    in property <length> size: 40px;
+    width: root.size;
+    height: root.size;
+    border-radius: root.size / 2;
+    clip: true;
+    background: Theme.hover;
+    border-width: 1px;
+    border-color: Theme.line;
+    if root.has-photo: Image {
+        source: root.photo;
+        width: 100%;
+        height: 100%;
+        image-fit: cover;
+    }
+    if !root.has-photo: Text {
+        text: root.initials;
+        color: Theme.cyan;
+        font-family: "Rajdhani";
+        font-weight: 700;
+        font-size: root.size * 0.4;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+component TabButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> active;
+    callback clicked();
+    height: 40px;
+    border-width: 1px;
+    border-color: root.active ? Theme.cyan : Theme.line-soft;
+    background: root.active ? Theme.hover : ttouch.has-hover ? Theme.hover : transparent;
+    Text {
+        text: root.label;
+        color: root.active ? Theme.cyan : Theme.muted;
+        font-family: "Rajdhani";
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 1.2px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    ttouch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component ContactItem inherits Rectangle {
+    in property <ContactRow> c;
+    height: 64px;
+    background: row-touch.has-hover ? Theme.hover : transparent;
+    Rectangle { y: parent.height - 1px; height: 1px; background: Theme.line-soft; }
+    row-touch := TouchArea { mouse-cursor: pointer; clicked => { Outreach.edit-contact(root.c.id); } }
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 8px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        spacing: 10px;
+        Avatar { photo: root.c.photo; has-photo: root.c.has-photo; initials: root.c.initials; size: 44px; y: (parent.height - 44px) / 2; }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 0px;
+            HorizontalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.c.name;
+                    color: Theme.text;
+                    font-family: "Rajdhani";
+                    font-weight: 700;
+                    font-size: 17px;
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+                if root.c.fulfilled: Text {
+                    text: "ANSWERED";
+                    color: Theme.ok;
+                    font-family: "Share Tech Mono";
+                    font-size: 9px;
+                    letter-spacing: 1px;
+                    vertical-alignment: center;
+                }
+            }
+            Text {
+                text: root.c.phone != "" ? root.c.phone : root.c.email;
+                color: Theme.muted;
+                font-family: "Rajdhani";
+                font-weight: 600;
+                font-size: 13px;
+                overflow: elide;
+            }
+        }
+        HorizontalLayout {
+            spacing: 4px;
+            alignment: end;
+            width: root.c.has-email ? 136px : 102px;
+            IconBtn { y: (parent.height - 30px) / 2; kind: "cal"; tip: "ADD TO CALENDAR"; clicked => { Outreach.add-event-for(root.c.id); } }
+            IconBtn { y: (parent.height - 30px) / 2; kind: "copy"; tip: "COPY CONTACT INFO"; clicked => { Outreach.copy-contact(root.c.id); } }
+            if root.c.has-email: IconBtn { y: (parent.height - 30px) / 2; kind: "mail"; tip: "EMAIL " + root.c.email; clicked => { Outreach.email-contact(root.c.id); } }
+            IconBtn {
+                y: (parent.height - 30px) / 2;
+                kind: "pray";
+                on: root.c.in-pool && !root.c.fulfilled;
+                tip: root.c.fulfilled ? "PRAYER ANSWERED · NOT IN ROTATION" : root.c.in-pool ? "IN DAILY PRAYER · CLICK TO REMOVE" : "ADD TO DAILY PRAYER";
+                clicked => { Outreach.toggle-pool(root.c.id); }
+            }
+        }
+    }
+}
+
+component EventItem inherits Rectangle {
+    in property <EvRow> e;
+    height: 40px;
+    background: etouch.has-hover ? Theme.hover : transparent;
+    Rectangle { y: parent.height - 1px; height: 1px; background: Theme.line-soft; }
+    etouch := TouchArea { mouse-cursor: pointer; clicked => { Outreach.edit-event(root.e.id); } }
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 10px;
+        Text {
+            text: root.e.when;
+            color: Theme.cyan;
+            font-family: "Share Tech Mono";
+            font-size: 12px;
+            vertical-alignment: center;
+            width: 124px;
+            overflow: elide;
+        }
+        Text {
+            text: root.e.title;
+            color: Theme.text;
+            font-family: "Rajdhani";
+            font-weight: 700;
+            font-size: 16px;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: root.e.repeat;
+            color: Theme.muted;
+            font-family: "Share Tech Mono";
+            font-size: 10px;
+            vertical-alignment: center;
+            horizontal-alignment: right;
+            overflow: elide;
+            width: 96px;
+        }
+    }
+}
+
+component DayCell inherits Rectangle {
+    in property <CalCell> cell;
+    callback clicked();
+    border-width: 1px;
+    border-color: root.cell.selected ? Theme.cyan : Theme.line-soft;
+    background: !root.cell.in-month ? transparent : dtouch.has-hover || root.cell.selected ? Theme.hover : Theme.panel;
+    opacity: root.cell.in-month ? 1 : 0.35;
+    if root.cell.day > 0: Rectangle {
+        x: 4px;
+        y: 4px;
+        width: 24px;
+        height: 20px;
+        border-radius: 10px;
+        background: root.cell.today ? Theme.cyan : transparent;
+        Text {
+            text: root.cell.day;
+            color: root.cell.today ? Theme.bg : Theme.text;
+            font-family: "Rajdhani";
+            font-weight: 700;
+            font-size: 14px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    if root.cell.count > 0: HorizontalLayout {
+        x: parent.width - 36px;
+        y: 10px;
+        width: 32px;
+        height: 8px;
+        spacing: 3px;
+        alignment: end;
+        for i in min(root.cell.count, 3): Rectangle { width: 6px; height: 6px; border-radius: 3px; background: Theme.magenta; }
+    }
+    if root.cell.count > 0: VerticalLayout {
+        x: 4px;
+        y: 28px;
+        width: parent.width - 8px;
+        height: parent.height - 30px;
+        spacing: 1px;
+        alignment: start;
+        Text { text: root.cell.t1; color: Theme.cyan; font-family: "Rajdhani"; font-weight: 600; font-size: 12px; overflow: elide; }
+        Text { text: root.cell.t2; color: Theme.cyan; font-family: "Rajdhani"; font-weight: 600; font-size: 12px; overflow: elide; visible: root.cell.t2 != ""; }
+        Text { text: root.cell.count > 2 ? "+" + (root.cell.count - 2) + " more" : ""; color: Theme.muted; font-family: "Share Tech Mono"; font-size: 9px; }
+    }
+    dtouch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component CalendarPane inherits Rectangle {
+    VerticalLayout {
+        padding: 14px;
+        spacing: 8px;
+        HorizontalLayout {
+            spacing: 8px;
+            height: 32px;
+            Rectangle { width: 40px; Btn { label: "◀"; clicked => { Outreach.prev-month(); } } }
+            Text {
+                text: Outreach.month-label;
+                color: Theme.cyan;
+                font-family: "Orbitron";
+                font-weight: 700;
+                font-size: 18px;
+                letter-spacing: 2px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Rectangle { width: 40px; Btn { label: "▶"; clicked => { Outreach.next-month(); } } }
+            Rectangle { width: 80px; Btn { label: "TODAY"; active: true; clicked => { Outreach.this-month(); } } }
+        }
+        HorizontalLayout {
+            height: 16px;
+            for name in ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]: Text {
+                text: name;
+                horizontal-stretch: 1;
+                horizontal-alignment: center;
+                color: Theme.muted;
+                font-family: "Share Tech Mono";
+                font-size: 10px;
+                letter-spacing: 1.2px;
+            }
+        }
+        GridLayout {
+            spacing: 2px;
+            vertical-stretch: 1;
+            for cell[i] in Outreach.cells: DayCell {
+                row: floor(i / 7);
+                col: mod(i, 7);
+                cell: cell;
+                clicked => { Outreach.select-day(i); }
+            }
+        }
+        Rectangle {
+            height: 148px;
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.line;
+            VerticalLayout {
+                padding: 8px;
+                spacing: 4px;
+                HorizontalLayout {
+                    height: 28px;
+                    spacing: 8px;
+                    Text {
+                        text: Outreach.selected-label;
+                        color: Theme.text;
+                        font-family: "Rajdhani";
+                        font-weight: 700;
+                        font-size: 16px;
+                        vertical-alignment: center;
+                        horizontal-stretch: 1;
+                        overflow: elide;
+                    }
+                    Rectangle { width: 130px; Btn { label: "+ ADD EVENT"; active: true; clicked => { Outreach.add-event-day(); } } }
+                }
+                Flickable {
+                    VerticalLayout {
+                        width: parent.width;
+                        if Outreach.day-events.length == 0: Text {
+                            text: "Nothing planned this day.";
+                            color: Theme.muted;
+                            font-family: "Rajdhani";
+                            font-weight: 600;
+                            font-size: 14px;
+                        }
+                        for ev in Outreach.day-events: EventItem { e: ev; }
+                    }
+                }
+            }
+        }
+    }
+}
+
+component ContactsPane inherits Rectangle {
+    VerticalLayout {
+        HorizontalLayout {
+            padding: 10px;
+            spacing: 8px;
+            height: 52px;
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                Kicker { text: "CONTACTS"; }
+                Text { text: Outreach.contact-count + (Outreach.contact-count == 1 ? " person" : " people"); color: Theme.text; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; }
+            }
+            Rectangle { width: 96px; Btn { label: "+ ADD"; active: true; clicked => { Outreach.add-contact(); } } }
+        }
+        Rectangle { height: 1px; background: Theme.line-soft; }
+        Flickable {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+                if Outreach.contacts.length == 0: Text {
+                    text: "No contacts yet. Press + ADD to make the first card.";
+                    wrap: word-wrap;
+                    color: Theme.muted;
+                    font-family: "Rajdhani";
+                    font-weight: 600;
+                    font-size: 15px;
+                }
+                for c in Outreach.contacts: ContactItem { c: c; }
+            }
+        }
+    }
+}
+
+component PrayerPane inherits Rectangle {
+    VerticalLayout {
+        HorizontalLayout {
+            padding: 10px;
+            height: 52px;
+            VerticalLayout {
+                alignment: center;
+                Kicker { text: "DAILY PRAYER POOL"; }
+                Text { text: Outreach.pr-pool-size + " in rotation"; color: Theme.text; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; }
+            }
+        }
+        Rectangle { height: 1px; background: Theme.line-soft; }
+        Flickable {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+                if Outreach.pool-list.length == 0: Text {
+                    text: "Press the praying hands on a contact to add them. Answered requests leave the rotation.";
+                    wrap: word-wrap;
+                    color: Theme.muted;
+                    font-family: "Rajdhani";
+                    font-weight: 600;
+                    font-size: 15px;
+                }
+                for c in Outreach.pool-list: ContactItem { c: c; }
+            }
+        }
+    }
+}
+
+component UpcomingPane inherits Rectangle {
+    VerticalLayout {
+        HorizontalLayout {
+            padding: 10px;
+            height: 52px;
+            VerticalLayout {
+                alignment: center;
+                Kicker { text: "NEXT 30 DAYS"; }
+                Text { text: Outreach.upcoming.length + " coming up"; color: Theme.text; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; }
+            }
+        }
+        Rectangle { height: 1px; background: Theme.line-soft; }
+        Flickable {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+                if Outreach.upcoming.length == 0: Text {
+                    text: "No events in the next 30 days.";
+                    color: Theme.muted;
+                    font-family: "Rajdhani";
+                    font-weight: 600;
+                    font-size: 15px;
+                }
+                for ev in Outreach.upcoming: EventItem { e: ev; }
+            }
+        }
+    }
+}
+
+component OutreachView inherits Rectangle {
+    HorizontalLayout {
+        Rectangle {
+            width: 124px;
+            background: Theme.chrome;
+            VerticalLayout {
+                padding: 10px;
+                spacing: 6px;
+                alignment: start;
+                Kicker { text: "OUTREACH"; }
+                TabButton { label: "CONTACTS"; active: Outreach.tab == "contacts"; clicked => { Outreach.tab = "contacts"; } }
+                TabButton { label: "UPCOMING"; active: Outreach.tab == "upcoming"; clicked => { Outreach.tab = "upcoming"; } }
+                TabButton { label: "PRAYER"; active: Outreach.tab == "prayer"; clicked => { Outreach.tab = "prayer"; } }
+                Rectangle { height: 8px; }
+                Text {
+                    text: Outreach.hint;
+                    wrap: word-wrap;
+                    color: Theme.amber;
+                    font-family: "Share Tech Mono";
+                    font-size: 10px;
+                    letter-spacing: 0.6px;
+                }
+            }
+            Rectangle { x: parent.width - 1px; width: 1px; background: Theme.line; }
+        }
+        Rectangle {
+            width: max(300px, min(392px, root.width * 0.34));
+            background: Theme.bg;
+            if Outreach.tab == "contacts": ContactsPane { width: 100%; height: 100%; }
+            if Outreach.tab == "upcoming": UpcomingPane { width: 100%; height: 100%; }
+            if Outreach.tab == "prayer": PrayerPane { width: 100%; height: 100%; }
+            Rectangle { x: parent.width - 1px; width: 1px; background: Theme.line-soft; }
+        }
+        CalendarPane { horizontal-stretch: 1; }
+    }
+}
+
+component PrayerCard inherits Rectangle {
+    background: Theme.panel;
+    border-width: 1px;
+    border-color: Theme.line;
+    height: 190px;
+    HorizontalLayout {
+        padding: 16px;
+        spacing: 16px;
+        if Outreach.pr-has: Avatar {
+            photo: Outreach.pr-photo;
+            has-photo: Outreach.pr-has-photo;
+            initials: Outreach.pr-initials;
+            size: 96px;
+            y: 8px;
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            spacing: 6px;
+            Kicker { text: "TODAY'S PRAYER"; }
+            if Outreach.pr-has: Text {
+                text: Outreach.pr-name;
+                color: Theme.cyan;
+                font-family: "Rajdhani";
+                font-weight: 700;
+                font-size: 24px;
+                overflow: elide;
+            }
+            if Outreach.pr-has: Text {
+                text: Outreach.pr-request != "" ? Outreach.pr-request : "No prayer request written yet.";
+                color: Outreach.pr-request != "" ? Theme.text : Theme.muted;
+                wrap: word-wrap;
+                font-family: "Rajdhani";
+                font-weight: 500;
+                font-size: 16px;
+                vertical-stretch: 1;
+            }
+            if !Outreach.pr-has: Text {
+                text: "Add someone to pray for";
+                color: Theme.text;
+                font-family: "Rajdhani";
+                font-weight: 700;
+                font-size: 22px;
+            }
+            if !Outreach.pr-has: Text {
+                text: "Tap the praying hands on a contact in Outreach and they will appear here, one person a day.";
+                color: Theme.muted;
+                wrap: word-wrap;
+                font-family: "Rajdhani";
+                font-weight: 600;
+                font-size: 15px;
+                vertical-stretch: 1;
+            }
+            HorizontalLayout {
+                alignment: start;
+                Rectangle { width: 160px; Btn { label: "OPEN OUTREACH"; active: true; clicked => { Outreach.open(); } } }
+            }
+        }
+    }
+}
+
 component HomeView inherits Flickable {
     VerticalLayout {
         width: parent.width;
@@ -646,6 +1345,27 @@ component HomeView inherits Flickable {
                 intro-touch := TouchArea {
                     mouse-cursor: pointer;
                     clicked => { Session.play-intro(); }
+                }
+            }
+            Rectangle {
+                width: 118px;
+                height: 30px;
+                border-width: 1px;
+                border-color: out-touch.has-hover ? Theme.cyan : Theme.line;
+                background: out-touch.has-hover ? Theme.hover : transparent;
+                Text {
+                    text: "OUTREACH";
+                    color: Theme.cyan;
+                    font-family: "Rajdhani";
+                    font-weight: 700;
+                    font-size: 14px;
+                    letter-spacing: 1.4px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                out-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { Outreach.open(); }
                 }
             }
         }
@@ -750,6 +1470,11 @@ component HomeView inherits Flickable {
                     Btn { label: "OPTIONS"; clicked => { Session.commit-note(); Session.view = "options"; } }
                 }
             }
+        }
+        HorizontalLayout {
+            spacing: 14px;
+            PrayerCard { horizontal-stretch: 2; }
+            Rectangle { horizontal-stretch: 3; }
         }
     }
 }
@@ -885,9 +1610,12 @@ component NoteArea inherits Rectangle {
 
 component Inspector inherits Rectangle {
     background: Theme.panel;
+    clip: true;
     Flickable {
         width: 100%;
         height: 100%;
+        // Never wider than the panel: long words, chips and passages wrap or scroll inside it.
+        content-width: self.width;
         VerticalLayout {
             width: parent.width;
             padding: 14px;
@@ -997,13 +1725,17 @@ component ReadView inherits Rectangle {
     private property <length> scroll-watch: Session.scroll-y;
     private property <int> chapter-watch: Session.chapter-token;
     private property <length> chip-watch: Session.chapter-x;
+    // The side columns shrink with the window, so a narrow or tiled window keeps the right
+    // panel on screen. At 1180px wide this is the usual 236 / 318.
+    private property <length> book-w: max(150px, min(236px, root.width * 0.2));
+    private property <length> side-w: max(240px, min(318px, root.width * 0.3));
     HorizontalLayout {
         height: parent.height;
         alignment: Session.reading-mode ? center : stretch;
-        if !Session.reading-mode: BookColumn { width: 236px; }
+        if !Session.reading-mode: BookColumn { width: root.book-w; }
         if !Session.reading-mode: Rectangle { width: 1px; background: Theme.line; }
         VerticalLayout {
-            width: Session.reading-mode ? min(root.width - 24px, 900px) : root.width - 556px;
+            width: Session.reading-mode ? min(root.width - 24px, 900px) : max(300px, root.width - root.book-w - root.side-w - 2px);
             padding: 12px;
             spacing: 8px;
             HorizontalLayout {
@@ -1115,7 +1847,7 @@ component ReadView inherits Rectangle {
             }
         }
         if !Session.reading-mode: Rectangle { width: 1px; background: Theme.line; }
-        if !Session.reading-mode: Inspector { width: 318px; }
+        if !Session.reading-mode: Inspector { width: root.side-w; }
     }
     changed scroll-watch => {
         if Session.focus-verse > 0 {
@@ -1320,6 +2052,14 @@ component OptionsView inherits Flickable {
             Rectangle { width: 180px; Btn { label: "EXPORT BACKUP"; active: true; clicked => { Session.export-backup(); } } }
             Rectangle { width: 180px; Btn { label: "RESTORE BACKUP"; clicked => { Session.import-backup(); } } }
         }
+        Text {
+            text: "Privacy: the backup file now also holds your Outreach contacts (names, phone numbers, emails, prayer requests, photos) and events. Keep it somewhere private; it is not encrypted.";
+            wrap: word-wrap;
+            font-family: "Rajdhani";
+            font-weight: 700;
+            font-size: 15px;
+            color: Theme.amber;
+        }
         Kicker { text: "ABOUT"; }
         Text {
             text: "TWM Bible 1.1.1. Bundled texts are public domain: KJV 1611 in standard spelling, ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims. The app code is MIT.";
@@ -1338,11 +2078,16 @@ export component AppWindow inherits Window {
     icon: @image-url("../assets/icon-256.png");
     preferred-width: 1180px;
     preferred-height: 780px;
-    min-width: 980px;
-    min-height: 640px;
+    min-width: 720px;
+    min-height: 560px;
     background: Theme.bg;
     full-screen: Session.reading-mode;
-    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup;
+    // Under 900px (a tiled window) the logo, clock and theme buttons give way to the tabs.
+    // Set from `changed width` (not a binding) so the window width and the nav layout cannot form a binding loop.
+    private property <bool> narrow: false;
+    changed width => { self.narrow = self.width < 900px; }
+    init => { self.narrow = self.width < 900px; }
+    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open;
     private property <int> focus-watch: Session.focus-request;
     private property <string> view-watch: Session.view;
     changed any-popup => { root-fs.focus(); }
@@ -1355,7 +2100,10 @@ export component AppWindow inherits Window {
         init => { self.focus(); }
         capture-key-pressed(event) => {
             if event.text == Key.Escape {
-                if Session.popup-open { Session.popup-open = false; }
+                if Outreach.confirm-open { Outreach.confirm-open = false; }
+                else if Outreach.event-open { Outreach.event-open = false; }
+                else if Outreach.card-open { Outreach.card-open = false; }
+                else if Session.popup-open { Session.popup-open = false; }
                 else if Session.ref-popup { Session.ref-popup = false; }
                 else if Session.chapter-popup { Session.chapter-popup = false; }
                 else if Session.export-popup { Session.export-popup = false; }
@@ -1401,6 +2149,99 @@ export component AppWindow inherits Window {
         background: @linear-gradient(180deg, #08788818, #00000000);
     }
 
+    if Outreach.card-open: PopupFrame {
+        box-width: 520px;
+        dismiss => { Outreach.card-open = false; }
+        Kicker { text: Outreach.c-id < 0 ? "NEW CONTACT" : "CONTACT CARD"; }
+        HorizontalLayout {
+            spacing: 14px;
+            Avatar { photo: Outreach.c-photo; has-photo: Outreach.c-has-photo; initials: Outreach.c-initials; size: 84px; }
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 6px;
+                alignment: center;
+                Field { placeholder: "Name"; text <=> Outreach.c-name; init => { self.focus-input(); } }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Btn { label: "CHOOSE PHOTO"; clicked => { Outreach.pick-photo(); } }
+                    if Outreach.c-has-photo: Btn { label: "REMOVE PHOTO"; clicked => { Outreach.clear-photo(); } }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            Field { placeholder: "Phone"; text <=> Outreach.c-phone; }
+            Field { placeholder: "Email (optional)"; text <=> Outreach.c-email; }
+        }
+        Kicker { text: "PRAYER REQUEST"; }
+        NoteArea { text <=> Outreach.c-prayer; }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: Outreach.c-fulfilled ? "PRAYER REQUEST FULFILLED: YES" : "PRAYER REQUEST FULFILLED: NO"; active: Outreach.c-fulfilled; clicked => { Outreach.c-fulfilled = !Outreach.c-fulfilled; } }
+            Btn { label: Outreach.c-pool ? "DAILY PRAYER: ON" : "DAILY PRAYER: OFF"; active: Outreach.c-pool; clicked => { Outreach.c-pool = !Outreach.c-pool; } }
+        }
+        if Outreach.c-error != "": Text { text: Outreach.c-error; color: Theme.red; font-family: "Rajdhani"; font-weight: 700; font-size: 14px; wrap: word-wrap; }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: "SAVE"; active: true; clicked => { Outreach.save-contact(); } }
+            if Outreach.c-id >= 0: DangerBtn { label: "DELETE"; clicked => { Outreach.ask-delete-contact(); } }
+            Btn { label: "CANCEL"; clicked => { Outreach.card-open = false; } }
+        }
+    }
+    if Outreach.event-open: PopupFrame {
+        box-width: 540px;
+        dismiss => { Outreach.event-open = false; }
+        Kicker { text: Outreach.e-id < 0 ? "NEW EVENT" : "EDIT EVENT"; }
+        Field { placeholder: "Title"; text <=> Outreach.e-title; init => { self.focus-input(); } }
+        HorizontalLayout {
+            spacing: 6px;
+            Rectangle { width: 34px; Btn { label: "◀"; clicked => { Outreach.step-date(-1); } } }
+            Field { placeholder: "Date  YYYY-MM-DD"; text <=> Outreach.e-date; horizontal-stretch: 1; }
+            Rectangle { width: 34px; Btn { label: "▶"; clicked => { Outreach.step-date(1); } } }
+            Rectangle { width: 10px; }
+            Rectangle { width: 34px; Btn { label: "−"; clicked => { Outreach.step-time(-30); } } }
+            Field { placeholder: "Time  19:30"; text <=> Outreach.e-time; width: 110px; }
+            Rectangle { width: 34px; Btn { label: "+"; clicked => { Outreach.step-time(30); } } }
+        }
+        Kicker { text: "REPEAT"; }
+        HorizontalLayout {
+            spacing: 6px;
+            Btn { label: "NONE"; active: Outreach.e-repeat == "none"; clicked => { Outreach.set-repeat("none"); } }
+            Btn { label: "WEEKLY"; active: Outreach.e-repeat == "weekly"; clicked => { Outreach.set-repeat("weekly"); } }
+            Btn { label: "TWICE A WEEK"; active: Outreach.e-repeat == "twice"; clicked => { Outreach.set-repeat("twice"); } }
+            Btn { label: "EVERY OTHER WEEK"; active: Outreach.e-repeat == "biweekly"; clicked => { Outreach.set-repeat("biweekly"); } }
+        }
+        if Outreach.e-repeat == "twice": HorizontalLayout {
+            spacing: 4px;
+            for name[i] in ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]: Btn {
+                label: name;
+                active: Outreach.e-days[i];
+                clicked => { Outreach.toggle-day(i); }
+            }
+        }
+        if Outreach.e-note != "": Text { text: Outreach.e-note; color: Theme.muted; font-family: "Rajdhani"; font-weight: 600; font-size: 14px; wrap: word-wrap; }
+        Kicker { text: "DETAILS"; }
+        NoteArea { text <=> Outreach.e-details; }
+        if Outreach.e-error != "": Text { text: Outreach.e-error; color: Theme.red; font-family: "Rajdhani"; font-weight: 700; font-size: 14px; wrap: word-wrap; }
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { label: "SAVE"; active: true; clicked => { Outreach.save-event(); } }
+            if Outreach.e-id >= 0: DangerBtn { label: "DELETE"; clicked => { Outreach.ask-delete-event(); } }
+            Btn { label: "CANCEL"; clicked => { Outreach.event-open = false; } }
+        }
+    }
+    if Outreach.confirm-open: PopupFrame {
+        box-width: 420px;
+        z: 20;
+        dismiss => { Outreach.confirm-open = false; }
+        Kicker { text: "CONFIRM DELETE"; }
+        Text { text: Outreach.confirm-text; wrap: word-wrap; color: Theme.text; font-family: "Rajdhani"; font-weight: 600; font-size: 16px; }
+        HorizontalLayout {
+            spacing: 8px;
+            DangerBtn { label: "YES, DELETE"; clicked => { Outreach.confirm-yes(); } }
+            Btn { label: "KEEP IT"; active: true; clicked => { Outreach.confirm-open = false; } }
+        }
+    }
     if Session.export-popup: PopupFrame {
         dismiss => { Session.export-popup = false; }
         Kicker { text: "EXPORT  ·  " + Session.place-title; }
@@ -1438,7 +2279,7 @@ export component AppWindow inherits Window {
             color: Theme.text;
         }
         Text {
-            text: "MERGE keeps what you have and adds what is missing. REPLACE swaps your notes, highlights and bookmarks for the file's. A copy of your current settings is saved first.";
+            text: "MERGE keeps what you have and adds what is missing. REPLACE swaps your notes, highlights, bookmarks and Outreach contacts and events for the file's. A copy of your current settings is saved first.";
             wrap: word-wrap;
             font-family: "Rajdhani";
             font-weight: 500;
@@ -1532,8 +2373,18 @@ export component AppWindow inherits Window {
         background: #00000088;
         TouchArea { clicked => { Session.popup-open = false; } }
         Rectangle {
-            width: min(460px, parent.width - 40px);
-            height: min(parent.height - 40px, pop-col.preferred-height + 32px);
+            private property <length> pw: min(460px, parent.width - 40px);
+            private property <length> ph: min(parent.height - 40px, pop-col.preferred-height + 32px);
+            // Below the pressed line when it fits, above it when it does not, and always inside the window.
+            private property <length> below: Session.popup-bottom + 6px;
+            private property <length> above: Session.popup-bottom - Session.popup-line - 6px - self.ph;
+            width: self.pw;
+            height: self.ph;
+            x: Session.popup-anchored ? max(20px, min(parent.width - self.pw - 20px, Session.popup-x - self.pw / 2)) : (parent.width - self.pw) / 2;
+            y: !Session.popup-anchored ? (parent.height - self.ph) / 2
+                : self.below + self.ph <= parent.height - 8px ? self.below
+                : self.above >= 8px ? self.above
+                : max(8px, parent.height - self.ph - 8px);
             background: Theme.panel;
             border-width: 1px;
             border-color: Theme.cyan;
@@ -1541,7 +2392,12 @@ export component AppWindow inherits Window {
             pop-col := VerticalLayout {
                 padding: 16px;
                 spacing: 8px;
-                Kicker { text: "WORD  ·  " + Session.sense-word; }
+                HorizontalLayout {
+                    spacing: 8px;
+                    min-height: 80px;
+                    Kicker { text: "WORD  ·  " + Session.sense-word; horizontal-stretch: 1; vertical-stretch: 0; }
+                    if Session.lookup-busy: GrokBotSprite { busy: true; }
+                }
                 Kicker { text: "ARCHAIC"; }
                 Text {
                     text: Session.sense-text;
@@ -1577,14 +2433,14 @@ export component AppWindow inherits Window {
             HorizontalLayout {
                 padding-left: 18px;
                 padding-right: 18px;
-                spacing: 16px;
+                spacing: 8px;
                 alignment: stretch;
-                Image {
+                if !root.narrow: Image {
                     source: @image-url("../assets/icon-256.png");
                     width: 36px;
                     height: 36px;
                 }
-                VerticalLayout {
+                if !root.narrow: VerticalLayout {
                     spacing: 0;
                     alignment: center;
                     Kicker { text: "FIELD READER"; }
@@ -1598,22 +2454,23 @@ export component AppWindow inherits Window {
                     }
                 }
                 Rectangle { horizontal-stretch: 1; }
-                Rectangle { width: 88px; Btn { label: "HOME"; active: Session.view == "home"; clicked => { Session.commit-note(); Session.view = "home"; } } }
-                Rectangle { width: 88px; Btn { label: "READ"; active: Session.view == "read"; clicked => { Session.commit-note(); Session.view = "read"; } } }
-                Rectangle { width: 118px; Btn { label: "BOOKMARKS"; active: Session.view == "bookmarks"; clicked => { Session.commit-note(); Session.view = "bookmarks"; } } }
-                Rectangle { width: 100px; Btn { label: "SEARCH"; active: Session.view == "search"; clicked => { Session.commit-note(); Session.view = "search"; } } }
-                Rectangle { width: 110px; Btn { label: "OPTIONS"; active: Session.view == "options"; clicked => { Session.commit-note(); Session.view = "options"; } } }
-                Rectangle {
+                Rectangle { width: 76px; Btn { label: "HOME"; active: Session.view == "home"; clicked => { Session.commit-note(); Session.view = "home"; } } }
+                Rectangle { width: 76px; Btn { label: "READ"; active: Session.view == "read"; clicked => { Session.commit-note(); Session.view = "read"; } } }
+                Rectangle { width: 108px; Btn { label: "BOOKMARKS"; active: Session.view == "bookmarks"; clicked => { Session.commit-note(); Session.view = "bookmarks"; } } }
+                Rectangle { width: 90px; Btn { label: "SEARCH"; active: Session.view == "search"; clicked => { Session.commit-note(); Session.view = "search"; } } }
+                Rectangle { width: 98px; Btn { label: "OUTREACH"; active: Session.view == "outreach"; clicked => { Session.commit-note(); Outreach.open(); } } }
+                Rectangle { width: 94px; Btn { label: "OPTIONS"; active: Session.view == "options"; clicked => { Session.commit-note(); Session.view = "options"; } } }
+                if !root.narrow: Rectangle {
                     width: 1px;
                     height: 28px;
                     background: Theme.line;
                 }
-                Rectangle {
-                    width: 228px;
+                if !root.narrow: Rectangle {
+                    width: 180px;
                     Text {
                         x: 0px;
                         y: 2px;
-                        width: 228px;
+                        width: 180px;
                         height: 16px;
                         text: Session.clock;
                         font-family: "Share Tech Mono";
@@ -1627,7 +2484,7 @@ export component AppWindow inherits Window {
                     HorizontalLayout {
                         x: 0px;
                         y: 24px;
-                        width: 228px;
+                        width: 180px;
                         height: 32px;
                         spacing: 4px;
                         Rectangle { horizontal-stretch: 1; Btn { label: "DARK"; active: Session.theme-mode == "dark"; clicked => { Session.set-theme("dark"); } } }
@@ -1646,6 +2503,7 @@ export component AppWindow inherits Window {
             if Session.view == "search": SearchView { width: 100%; height: 100%; }
             if Session.view == "bookmarks": BookmarksView { width: 100%; height: 100%; }
             if Session.view == "options": OptionsView { width: 100%; height: 100%; }
+            if Session.view == "outreach": OutreachView { width: 100%; height: 100%; }
         }
         if !Session.reading-mode: Rectangle {
             height: 28px;

@@ -206,6 +206,11 @@ pub struct Backup {
     pub highlights: BTreeMap<String, String>,
     #[serde(default)]
     pub bookmarks: Vec<String>,
+    /// Optional Outreach sections (private details). Absent in older backups.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contacts: Option<Vec<crate::outreach::ContactBackup>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub events: Option<Vec<crate::outreach::Event>>,
 }
 
 pub fn make_backup(settings: &Settings, exported: &str) -> Backup {
@@ -216,6 +221,8 @@ pub fn make_backup(settings: &Settings, exported: &str) -> Backup {
         notes: settings.notes.clone(),
         highlights: settings.highlights.clone(),
         bookmarks: settings.bookmarks.clone(),
+        contacts: None,
+        events: None,
     }
 }
 
@@ -397,5 +404,27 @@ mod tests {
         assert!(toggle_bookmark(&mut list, "john:3:16"));
         assert!(!toggle_bookmark(&mut list, "john:3:16"));
         assert!(list.is_empty());
+    }
+
+    #[test]
+    fn old_backups_import_and_new_sections_roundtrip() {
+        // A backup written before Outreach existed has no contact or event sections.
+        let old = r#"{"format":"twm-bible-backup","version":1,"exported":"2026-01-01","notes":{},"highlights":{},"bookmarks":["john:3:16"]}"#;
+        let parsed = parse_backup(old).unwrap();
+        assert!(parsed.contacts.is_none() && parsed.events.is_none());
+        assert_eq!(parsed.bookmarks.len(), 1);
+        // The sections are omitted from the file when empty, so old apps see an identical file.
+        let plain = serde_json::to_string(&make_backup(&Settings::default(), "d")).unwrap();
+        assert!(!plain.contains("contacts") && !plain.contains("events"));
+        // With sections, fake people survive a trip through the file.
+        let mut backup = make_backup(&Settings::default(), "d");
+        backup.contacts = Some(vec![crate::outreach::ContactBackup {
+            contact: crate::outreach::Contact { id: 4, name: "Test Person".into(), in_pool: true, ..Default::default() },
+            photo_b64: Some("/9j/".into()),
+        }]);
+        backup.events = Some(vec![crate::outreach::Event { id: 2, title: "T".into(), date: "2026-10-20".into(), ..Default::default() }]);
+        let again = parse_backup(&serde_json::to_string(&backup).unwrap()).unwrap();
+        assert_eq!(again.contacts.unwrap()[0].contact.name, "Test Person");
+        assert_eq!(again.events.unwrap()[0].date, "2026-10-20");
     }
 }

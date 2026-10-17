@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0
+
+### Outreach
+- New OUTREACH view (button on Home and in the top bar) with a planner and contacts.
+- Planner: a month calendar with events, including repeating events (daily, weekly, monthly, yearly). Contacts can be added to the calendar from their row.
+- Contacts, with tabs and rows: a 256x256 photo (chosen with a file picker, stored on this computer only), phone, email, address, notes and prayer request. Each row has copy, email (opens your mail program with a `mailto:` link) and prayer toggles. A contact card has a fulfilled toggle.
+- Daily prayer card on Home: shows one contact from your prayer pool per day, rotating without repeats until everyone has had a turn.
+- Contacts and events are stored on this computer (`contacts.json`, `events.json`, `photos/`), written atomically with owner-only permissions on Linux and macOS.
+- Backup and restore can include contacts and events. A privacy warning appears when exporting, because the file then contains personal information.
+
+### Loading animation
+- A small robot animation shows in the word popup and in the word panel while a modern definition is being fetched.
+
+### Fixes
+- The word popup now opens just below the line you pressed (or above it when there is no room) instead of covering the word, and always stays inside the window.
+- The robot in the popup header has room above it and is no longer clipped.
+- The right-hand panel (word, note and definition) can no longer push past the window edge. The side columns shrink with the window, long word lists and definitions stay inside the panel, and the top bar simplifies in narrow windows.
+- The minimum window size is now 720 x 560, so tiled windows are laid out rather than cut off.
+
 ## 1.1.1
 
 ### Fixes

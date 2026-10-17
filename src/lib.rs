@@ -6,6 +6,7 @@ pub mod intro;
 pub mod flow;
 pub mod extras;
 pub mod export;
+pub mod outreach;
 
 /// Keeps a child process from opening a console window on Windows. No effect elsewhere.
 pub fn quiet(command: &mut std::process::Command) -> &mut std::process::Command {

@@ -196,6 +196,12 @@ pub fn data_dir() -> Option<PathBuf> {
 }
 
 pub fn state_dir() -> PathBuf {
+    // Test builds and launchers can point the app at a separate folder entirely.
+    if let Ok(path) = env::var("TWM_BIBLE_STATE_DIR") {
+        if !path.is_empty() {
+            return PathBuf::from(path);
+        }
+    }
     if let Ok(path) = env::var("XDG_STATE_HOME") {
         if !path.is_empty() {
             return PathBuf::from(path).join("twm-bible-slint");

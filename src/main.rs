@@ -22,6 +22,8 @@ use twm_bible_native::flow;
 
 slint::include_modules!();
 
+mod outreach_ui;
+
 struct Bundled {
     id: &'static str,
     label: &'static str,
@@ -87,6 +89,8 @@ struct Core {
     pending_backup: Option<extras::Backup>,
     hit_width: f32,
     terms: Vec<String>,
+    outreach: twm_bible_native::outreach::Store,
+    outreach_ui: outreach_ui::OutreachState,
 }
 
 #[derive(Clone)]
@@ -101,11 +105,18 @@ struct Models {
     links: Rc<VecModel<LinkChip>>,
     bookmarks: Rc<VecModel<BookmarkRow>>,
     word_hits: Rc<VecModel<HitRow>>,
+    out_contacts: Rc<VecModel<ContactRow>>,
+    out_pool: Rc<VecModel<ContactRow>>,
+    out_cells: Rc<VecModel<CalCell>>,
+    out_day: Rc<VecModel<EvRow>>,
+    out_upcoming: Rc<VecModel<EvRow>>,
+    out_days: Rc<VecModel<bool>>,
 }
 
 impl Core {
     fn open() -> Self {
         let state_dir = store::state_dir();
+        let outreach_dir = state_dir.clone();
         let settings_path = state_dir.join("settings.json");
         let settings = store::load(&settings_path);
         let data_dir = store::data_dir();
@@ -137,6 +148,8 @@ impl Core {
             pending_backup: None,
             hit_width: 560.0,
             terms: Vec::new(),
+            outreach: twm_bible_native::outreach::Store::load(&outreach_dir),
+            outreach_ui: outreach_ui::OutreachState::new(),
         };
         if core.data_dir.is_none() {
             core.load_error = "The Bible text was not found. Expected data/kjv.json beside the app.".into();
@@ -1148,13 +1161,16 @@ fn show_sense(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, sense: &texts
     let cache = core.borrow().state_dir.join("definitions.json");
     if key.is_empty() {
         session.set_modern_text("".into());
+        session.set_lookup_busy(false);
         return;
     }
     if let Some(hit) = define::cached(&cache, &key) {
         session.set_modern_text(hit.into());
+        session.set_lookup_busy(false);
         return;
     }
     session.set_modern_text("Looking up the modern sense…".into());
+    session.set_lookup_busy(true);
     let slot = core.borrow().define_token.clone();
     let generation = slot.fetch_add(1, Ordering::Relaxed) + 1;
     let weak = ui.as_weak();
@@ -1167,6 +1183,7 @@ fn show_sense(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, sense: &texts
                 return;
             }
             ui.global::<Session>().set_modern_text(text.into());
+            ui.global::<Session>().set_lookup_busy(false);
         });
     });
 }
@@ -1297,6 +1314,12 @@ fn main() -> Result<(), slint::PlatformError> {
         links: Rc::new(VecModel::from(Vec::<LinkChip>::new())),
         bookmarks: Rc::new(VecModel::from(Vec::<BookmarkRow>::new())),
         word_hits: Rc::new(VecModel::from(Vec::<HitRow>::new())),
+        out_contacts: Rc::new(VecModel::from(Vec::new())),
+        out_pool: Rc::new(VecModel::from(Vec::new())),
+        out_cells: Rc::new(VecModel::from(Vec::new())),
+        out_day: Rc::new(VecModel::from(Vec::new())),
+        out_upcoming: Rc::new(VecModel::from(Vec::new())),
+        out_days: Rc::new(VecModel::from(vec![false; 7])),
     };
     let session = ui.global::<Session>();
     session.set_books(ModelRc::from(models.books.clone()));
@@ -1312,6 +1335,7 @@ fn main() -> Result<(), slint::PlatformError> {
     session.set_clock(clock_now().into());
     apply_theme(&ui, &mut core.borrow_mut());
     after_nav(&ui, &core.borrow(), &models);
+    outreach_ui::setup(&ui, &core, &models);
 
     let weak = ui.as_weak();
 
@@ -1489,7 +1513,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let Some(ui) = weak.upgrade() else { return };
             let day = chrono::Local::now().format("%Y-%m-%d").to_string();
             let Some(path) = rfd::FileDialog::new()
-                .set_title("Export notes, highlights and bookmarks")
+                .set_title("Export backup (includes private contact details)")
                 .set_file_name(format!("twm-bible-backup-{day}.json"))
                 .add_filter("JSON", &["json"])
                 .save_file()
@@ -1497,16 +1521,26 @@ fn main() -> Result<(), slint::PlatformError> {
                 return;
             };
             let path = if path.extension().is_some() { path } else { path.with_extension("json") };
-            let backup = extras::make_backup(&core.borrow().settings, &day);
+            let mut backup = extras::make_backup(&core.borrow().settings, &day);
+            {
+                // Outreach sections are optional: only written when there is something in them.
+                let app = core.borrow();
+                if !app.outreach.contacts.is_empty() || !app.outreach.events.is_empty() {
+                    backup.contacts = Some(twm_bible_native::outreach::contacts_for_backup(&app.outreach));
+                    backup.events = Some(app.outreach.events.clone());
+                }
+            }
             let result = serde_json::to_vec_pretty(&backup)
                 .map_err(|err| err.to_string())
                 .and_then(|data| fs::write(&path, data).map_err(|err| err.to_string()));
             let message = match result {
                 Ok(()) => format!(
-                    "Exported {} notes, {} highlights, {} bookmarks to {}.",
+                    "Exported {} notes, {} highlights, {} bookmarks, {} contacts, {} events to {}. It holds private contact details; keep it safe.",
                     backup.notes.len(),
                     backup.highlights.len(),
                     backup.bookmarks.len(),
+                    backup.contacts.as_ref().map(|c| c.len()).unwrap_or(0),
+                    backup.events.as_ref().map(|c| c.len()).unwrap_or(0),
                     path.display()
                 ),
                 Err(err) => format!("Could not export. {err}"),
@@ -1531,12 +1565,20 @@ fn main() -> Result<(), slint::PlatformError> {
                 .and_then(|text| extras::parse_backup(&text));
             match parsed {
                 Ok(backup) => {
-                    let text = format!(
-                        "{} notes, {} highlights, {} bookmarks.",
+                    let mut text = format!(
+                        "{} notes, {} highlights, {} bookmarks",
                         backup.notes.len(),
                         backup.highlights.len(),
                         backup.bookmarks.len()
                     );
+                    if backup.contacts.is_some() || backup.events.is_some() {
+                        text.push_str(&format!(
+                            ", {} contacts, {} events",
+                            backup.contacts.as_ref().map(|c| c.len()).unwrap_or(0),
+                            backup.events.as_ref().map(|c| c.len()).unwrap_or(0)
+                        ));
+                    }
+                    text.push('.');
                     core.borrow_mut().pending_backup = Some(backup);
                     let session = ui.global::<Session>();
                     session.set_import_text(text.into());
@@ -1561,6 +1603,31 @@ fn main() -> Result<(), slint::PlatformError> {
             }
             extras::apply_backup(&mut core.borrow_mut().settings, &backup, replace);
             persist_ui(&ui, &core);
+            if backup.contacts.is_some() || backup.events.is_some() {
+                let mut app = core.borrow_mut();
+                if replace {
+                    // Keep a copy of what Outreach held before it is swapped.
+                    let dir = app.state_dir.clone();
+                    for name in ["contacts.json", "events.json"] {
+                        let from = dir.join(name);
+                        if let Ok(data) = fs::read(&from) {
+                            let _ = twm_bible_native::outreach::write_private(&dir.join(name.replace(".json", ".pre-restore.json")), &data);
+                        }
+                    }
+                }
+                twm_bible_native::outreach::apply_backup_sections(
+                    &mut app.outreach,
+                    backup.contacts.as_deref().unwrap_or(&[]),
+                    backup.events.as_deref().unwrap_or(&[]),
+                    replace,
+                );
+                let saved = app.outreach.save_contacts().and_then(|_| app.outreach.save_events());
+                drop(app);
+                if let Err(err) = saved {
+                    show_status(&ui, &mut core.borrow_mut(), format!("Could not save contacts. {err}"));
+                }
+                outreach_ui::refresh(&ui, &core, &models);
+            }
             after_nav(&ui, &core.borrow(), &models);
             let message = if replace { "Restored. Your previous settings were kept as settings.pre-restore.json." } else { "Merged the backup into your notes, highlights and bookmarks." };
             show_status(&ui, &mut core.borrow_mut(), message);
@@ -2108,12 +2175,14 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let timer_ui = ui.as_weak();
     let timer_core = core.clone();
+    let timer_models = models.clone();
     let timer = slint::Timer::default();
     let mut ticks = 0u32;
     timer.start(slint::TimerMode::Repeated, Duration::from_secs(1), move || {
         let Some(ui) = timer_ui.upgrade() else { return };
         ticks = ticks.wrapping_add(1);
         ui.global::<Session>().set_clock(clock_now().into());
+        outreach_ui::tick(&ui, &timer_core, &timer_models);
         if ticks % 3 == 0 {
             let scheme = theme::system_scheme();
             let mode = timer_core.borrow().settings.theme_mode.clone();

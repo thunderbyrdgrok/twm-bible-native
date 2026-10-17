@@ -2240,6 +2240,9 @@ checksum = "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104"
 dependencies = [
  "bytemuck",
  "byteorder-lite",
+ "color_quant",
+ "gif",
+ "image-webp",
  "moxcms",
  "num-traits",
  "png",
@@ -4668,10 +4671,11 @@ checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "twm-bible-native"
-version = "1.1.1"
+version = "1.2.0"
 dependencies = [
  "arboard",
  "chrono",
+ "image",
  "regex",
  "rfd",
  "serde",

@@ -4,7 +4,7 @@ Native desktop reader for the TWM Bible texts. It is a Rust and Slint applicatio
 
 ## What's new
 
-See [CHANGELOG.md](CHANGELOG.md). Version 1.1.0 adds side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
+See [CHANGELOG.md](CHANGELOG.md). Version 1.2.0 adds Outreach (a planner, contacts with photos, and a daily prayer card), a loading animation, and popup and layout fixes. Version 1.1.0 added side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
 
 ## Install
 
@@ -21,7 +21,7 @@ Download the file for your system from the GitHub Releases page.
 - Windows: `cargo build --release`, then `makensis packaging\windows\installer.nsi`
 - macOS: `./packaging/macos/build-dmg.sh`
 
-Pushing a tag such as `v1.1.1` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
+Pushing a tag such as `v1.2.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
 
 ## Run from source
 
@@ -33,13 +33,17 @@ The launcher builds the release binary when the sources are newer, then starts i
 
 ## Reading
 
-Home, Read, Search, and Options. The default text is the KJV 1611 in standard spelling. ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims are bundled and start turned off. KJV stays on.
+Home, Read, Search, Outreach, and Options. The default text is the KJV 1611 in standard spelling. ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims are bundled and start turned off. KJV stays on.
 
 A reference such as `John 3:16` opens that verse. Keyword search needs at least two letters and lists up to 500 verses. Click a verse to select it. Click its number to highlight it. A second click on the number does not clear the highlight. Remove does.
 
 Notes can hold text and verse links such as `Romans 8:28, Psalm 23:1`. The note is saved when you leave the verse, change tabs, or close the window. An empty note is removed.
 
 Word chips under the selected verse open the KJV glossary. A modern definition is fetched once from dictionaryapi.dev, then Datamuse, and kept on this computer.
+
+## Outreach
+
+The OUTREACH view holds a planner (month calendar with repeating events) and your contacts, each with an optional photo, copy and email buttons, a prayer toggle and a fulfilled toggle. The Home page shows a daily prayer card chosen from contacts in the prayer pool. This data stays on your computer in `contacts.json`, `events.json` and `photos/` beside your notes. Backups that include contacts and events contain personal information, so keep them private. The email button opens your mail program with a `mailto:` link.
 
 ## Appearance
 
