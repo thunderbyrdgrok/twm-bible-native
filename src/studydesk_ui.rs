@@ -291,6 +291,30 @@ fn focus_block(ui: &AppWindow, desk: &Desk, index: usize, a: Option<usize>, b: O
     });
 }
 
+/// Like `focus_block`, but for a block that already exists in the model: focus moves in this event,
+/// so held arrow keys walk through blocks without waiting for a timer.
+fn focus_block_now(ui: &AppWindow, desk: &Desk, index: usize, a: Option<usize>) {
+    let Some(doc) = &desk.doc else { return };
+    let Some(block) = doc.blocks.get(index) else { return };
+    let len = block.text.len();
+    let a = a.unwrap_or(len).min(len);
+    let st = ui.global::<Studio>();
+    st.set_focus_id(block.id as i32);
+    st.set_focus_a(a as i32);
+    st.set_focus_b(a as i32);
+    st.set_focus_tick(st.get_focus_tick() + 1);
+    let weak = ui.as_weak();
+    let id = block.id as i32;
+    slint::Timer::single_shot(Duration::from_millis(120), move || {
+        if let Some(ui) = weak.upgrade() {
+            let st = ui.global::<Studio>();
+            if st.get_focus_id() == id {
+                st.set_focus_id(-1);
+            }
+        }
+    });
+}
+
 fn save_label(ui: &AppWindow, desk: &mut Desk) {
     let st = ui.global::<Studio>();
     let had_doc = desk.doc_dirty;
@@ -584,6 +608,38 @@ pub fn setup(ui: &AppWindow, core: &CoreRc) -> DeskRc {
         st.set_can_redo(false);
     });
 
+    // A key typed while the edited block was scrolled out of view: put it back and apply the key.
+    hook!(on_resume_typing, |ui, d, c, key| {
+        let _ = c;
+        let Some(doc) = d.doc.as_ref() else { return };
+        if doc.blocks.is_empty() {
+            return;
+        }
+        let i = d.current.min(doc.blocks.len() - 1);
+        let old = doc.blocks[i].text.clone();
+        let (a, b) = d.sel;
+        let (lo, hi) = (a.min(b).min(old.len()), a.max(b).min(old.len()));
+        if !old.is_char_boundary(lo) || !old.is_char_boundary(hi) {
+            focus_block(&ui, d, i, Some(a), Some(b));
+            return;
+        }
+        let (new, caret) = resume_edit(&old, lo, hi, key.as_str());
+        if new != old {
+            d.snapshot();
+            d.doc.as_mut().unwrap().blocks[i].text = new;
+            d.typing = None;
+            d.touch();
+            d.refresh_row(i);
+            let st = ui.global::<Studio>();
+            st.set_can_undo(!d.undo.is_empty());
+            st.set_can_redo(false);
+        }
+        d.sel = (caret, caret);
+        focus_block(&ui, d, i, Some(caret), None);
+    });
+
+    ui.global::<Studio>().on_byte_len(|text| text.len() as i32);
+
     hook!(on_block_extra, |ui, d, c, index, text| {
         let _ = (c, &ui);
         let i = index as usize;
@@ -711,11 +767,11 @@ pub fn setup(ui: &AppWindow, core: &CoreRc) -> DeskRc {
             return true;
         }
         if dir < 0 && cursor == 0 && i > 0 {
-            focus_block(&ui, d, i - 1, None, None);
+            focus_block_now(&ui, d, i - 1, None);
             return true;
         }
         if dir > 0 && cursor as usize >= doc.blocks[i].text.len() && i + 1 < len {
-            focus_block(&ui, d, i + 1, Some(0), None);
+            focus_block_now(&ui, d, i + 1, Some(0));
             return true;
         }
         false
@@ -1165,4 +1221,50 @@ pub fn setup(ui: &AppWindow, core: &CoreRc) -> DeskRc {
     });
 
     desk
+}
+
+/// Applies one key from Slint's key event text to `text` with the selection `lo..hi` (byte offsets).
+/// Printable text replaces the selection, Backspace/Delete remove; anything else only keeps the caret.
+pub(crate) fn resume_edit(text: &str, lo: usize, hi: usize, key: &str) -> (String, usize) {
+    let printable = !key.is_empty() && key.chars().all(|ch| !ch.is_control() && !('\u{f700}'..='\u{f8ff}').contains(&ch));
+    if printable {
+        return (format!("{}{}{}", &text[..lo], key, &text[hi..]), lo + key.len());
+    }
+    match key {
+        "\u{8}" => {
+            if lo < hi {
+                (format!("{}{}", &text[..lo], &text[hi..]), lo)
+            } else if let Some((p, _)) = text[..lo].char_indices().next_back() {
+                (format!("{}{}", &text[..p], &text[lo..]), p)
+            } else {
+                (text.to_string(), lo)
+            }
+        }
+        "\u{7f}" => {
+            if lo < hi {
+                (format!("{}{}", &text[..lo], &text[hi..]), lo)
+            } else if let Some(ch) = text[lo..].chars().next() {
+                (format!("{}{}", &text[..lo], &text[lo + ch.len_utf8()..]), lo)
+            } else {
+                (text.to_string(), lo)
+            }
+        }
+        _ => (text.to_string(), hi),
+    }
+}
+
+#[cfg(test)]
+mod resume_tests {
+    use super::resume_edit;
+
+    #[test]
+    fn resume_edit_inserts_deletes_and_keeps_caret() {
+        assert_eq!(resume_edit("abc", 1, 1, "X"), ("aXbc".to_string(), 2));
+        assert_eq!(resume_edit("abc", 0, 2, "é"), ("éc".to_string(), 2));
+        assert_eq!(resume_edit("aéc", 3, 3, "\u{8}"), ("ac".to_string(), 1));
+        assert_eq!(resume_edit("abc", 0, 0, "\u{8}"), ("abc".to_string(), 0));
+        assert_eq!(resume_edit("abc", 1, 1, "\u{7f}"), ("ac".to_string(), 1));
+        assert_eq!(resume_edit("abc", 1, 1, "\n"), ("abc".to_string(), 1));
+        assert_eq!(resume_edit("abc", 1, 1, "\u{f700}"), ("abc".to_string(), 1));
+    }
 }

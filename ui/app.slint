@@ -1340,6 +1340,16 @@ export global Studio {
     in-out property <int> focus-b: -1;
     in-out property <length> scroll-to: -1px;
     in-out property <int> scroll-tick: 0;
+    // scroll keys (Up/Down/PageUp/PageDown/Home/End) that reached the window while no field was editing
+    in-out property <int> key-tick: 0;
+    in-out property <string> key-name: "";
+    // Slint drops keyboard focus from a field that is scrolled fully out of view, so a block that
+    // the wheel scrolls away is "parked": the window keeps the keys and the next typed key resumes it.
+    in-out property <int> parked: -1;
+    in-out property <length> view-top: 0px;
+    in-out property <length> view-h: 0px;
+    callback resume-typing(string);
+    pure callback byte-len(string) -> int;
     in-out property <bool> list-open: true;
     in-out property <bool> panel-open: true;
     // scripture panel
@@ -1479,6 +1489,17 @@ component DeskBlockView inherits Rectangle {
     }
     init => { if Studio.focus-id == root.b.id { root.grab(); } }
     changed tick => { if Studio.focus-id == root.b.id { root.grab(); } }
+    private property <bool> in-view: Session.view == "sermon" && root.y + input.y + input.height > Studio.view-top + 2px && root.y + input.y < Studio.view-top + Studio.view-h - 2px;
+    changed in-view => {
+        if root.editing && !root.in-view {
+            // park before Slint silently drops the focus; the window takes the keys
+            Studio.parked = root.index;
+            Session.focus-request += 1;
+        } else if Studio.parked == root.index && root.in-view {
+            Studio.parked = -1;
+            input.focus();
+        }
+    }
 
     // quote bar
     if root.quote: Rectangle { x: 0; y: 0; width: 4px; height: parent.height; background: Theme.cyan; }
@@ -1549,6 +1570,8 @@ component DeskBlockView inherits Rectangle {
         horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
     }
     input := TextInput {
+        // top of the caret's line inside this block, for Up/Down between blocks
+        property <length> caret-line-y: 0px;
         x: root.left-pad;
         y: root.top;
         width: root.text-w;
@@ -1563,12 +1586,17 @@ component DeskBlockView inherits Rectangle {
         horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
         selection-background-color: Theme.light ? #08788840 : #3df0ff40;
         selection-foreground-color: Theme.text;
-        edited => { Studio.block-edited(root.index, self.text); }
+        edited => {
+            Studio.block-edited(root.index, self.text);
+            // keep the caret in view while typing, even after the page was scrolled away
+            root.caret(root.y + self.y + self.caret-line-y);
+        }
         changed has-focus => {
-            if self.has-focus { Studio.block-focus(root.index); } else { Studio.block-blur(root.index); }
+            if self.has-focus { Studio.parked = -1; Studio.block-focus(root.index); root.caret(root.y + self.y + self.caret-line-y); } else { Studio.block-blur(root.index); }
         }
         cursor-position-changed(pos) => {
             Studio.block-sel(root.index, self.anchor-position-byte-offset, self.cursor-position-byte-offset);
+            self.caret-line-y = pos.y;
             root.caret(root.y + self.y + pos.y);
         }
         key-pressed(event) => {
@@ -1587,11 +1615,12 @@ component DeskBlockView inherits Rectangle {
             if event.text == Key.Backspace && self.cursor-position-byte-offset == 0 && self.anchor-position-byte-offset == 0 {
                 if Studio.merge-up(root.index) { return accept; }
             }
-            if event.text == Key.UpArrow && !event.modifiers.shift {
-                if Studio.step-focus(root.index, -1, self.cursor-position-byte-offset) { return accept; }
+            // Up on the first line / Down on the last line moves to the neighbouring block
+            if event.text == Key.UpArrow && !event.modifiers.shift && (self.caret-line-y < root.fsize * 0.6 || self.cursor-position-byte-offset == 0) {
+                if Studio.step-focus(root.index, -1, 0) { return accept; }
             }
-            if event.text == Key.DownArrow && !event.modifiers.shift {
-                if Studio.step-focus(root.index, 1, self.cursor-position-byte-offset) { return accept; }
+            if event.text == Key.DownArrow && !event.modifiers.shift && (self.caret-line-y + root.fsize * 1.9 >= self.height || self.cursor-position-byte-offset >= Studio.byte-len(self.text)) {
+                if Studio.step-focus(root.index, 1, 2147483647) { return accept; }
             }
             reject
         }
@@ -1815,6 +1844,18 @@ component SermonView inherits Rectangle {
     private property <bool> wide: root.width >= 980px;
     private property <bool> list-forced: false;
     private property <bool> list-shown: root.wide ? Studio.list-open : root.list-forced;
+    private property <int> key-watch: Studio.key-tick;
+    changed key-watch => {
+        if Session.view == "sermon" {
+            doc-flick.content-y = Studio.key-name == "up" ? min(0px, doc-flick.content-y + 60px)
+                : Studio.key-name == "down" ? max(min(0px, doc-flick.height - doc-col.preferred-height), doc-flick.content-y - 60px)
+                : Studio.key-name == "pgup" ? min(0px, doc-flick.content-y + doc-flick.height * 0.9)
+                : Studio.key-name == "pgdn" ? max(min(0px, doc-flick.height - doc-col.preferred-height), doc-flick.content-y - doc-flick.height * 0.9)
+                : Studio.key-name == "home" ? 0px
+                : Studio.key-name == "end" ? min(0px, doc-flick.height - doc-col.preferred-height)
+                : doc-flick.content-y;
+        }
+    }
     changed scroll-watch => {
         if Studio.scroll-to >= 0 {
             doc-flick.content-y = max(min(0px, doc-flick.height - doc-col.preferred-height), -max(0px, Studio.scroll-to - 40px));
@@ -1925,6 +1966,10 @@ component SermonView inherits Rectangle {
                 clip: true;
                 doc-flick := Flickable {
                     mouse-drag-pan-enabled: false;
+                    // the visible band, for parking the edited block when the page scrolls it away
+                    init => { Studio.view-top = -self.content-y; Studio.view-h = self.height; }
+                    changed content-y => { Studio.view-top = -self.content-y; }
+                    changed height => { Studio.view-h = self.height; }
                     content-height: doc-col.preferred-height;
                     doc-col := VerticalLayout {
                         width: doc-flick.width;
@@ -2098,6 +2143,18 @@ component NotesView inherits Rectangle {
                 note-flick := Flickable {
                     mouse-drag-pan-enabled: false;
                     content-height: max(self.height, note-input.preferred-height + 40px);
+                    property <int> key-watch: Studio.key-tick;
+                    changed key-watch => {
+                        if Session.view == "notes" {
+                            self.content-y = Studio.key-name == "up" ? min(0px, self.content-y + 60px)
+                                : Studio.key-name == "down" ? max(min(0px, self.height - self.content-height), self.content-y - 60px)
+                                : Studio.key-name == "pgup" ? min(0px, self.content-y + self.height * 0.9)
+                                : Studio.key-name == "pgdn" ? max(min(0px, self.height - self.content-height), self.content-y - self.height * 0.9)
+                                : Studio.key-name == "home" ? 0px
+                                : Studio.key-name == "end" ? min(0px, self.height - self.content-height)
+                                : self.content-y;
+                        }
+                    }
                     note-input := TextInput {
                         private property <int> tick: Studio.note-tick;
                         changed tick => { self.focus(); }
@@ -2951,6 +3008,7 @@ export component AppWindow inherits Window {
         init => { self.focus(); }
         capture-key-pressed(event) => {
             if event.text == Key.Escape {
+                Studio.parked = -1;
                 if Studio.confirm-open { Studio.confirm-open = false; }
                 else if Outreach.confirm-open { Outreach.confirm-open = false; }
                 else if Outreach.event-open { Outreach.event-open = false; }
@@ -2977,6 +3035,23 @@ export component AppWindow inherits Window {
             reject
         }
         key-pressed(event) => {
+            if Session.view == "sermon" && Studio.parked >= 0 && !root.any-popup && !event.modifiers.control && !event.modifiers.alt && !event.modifiers.meta
+                && event.text != "" && event.text != Key.UpArrow && event.text != Key.DownArrow && event.text != Key.PageUp && event.text != Key.PageDown
+                && event.text != Key.Home && event.text != Key.End && event.text != Key.Tab && event.text != Key.Backtab
+                && event.text != Key.Shift && event.text != Key.ShiftR && event.text != Key.Control && event.text != Key.ControlR
+                && event.text != Key.Alt && event.text != Key.AltGr && event.text != Key.Meta && event.text != Key.MetaR && event.text != Key.CapsLock {
+                // stays parked until the block really has the focus again, so fast typing is not lost
+                Studio.resume-typing(event.text);
+                return accept;
+            }
+            if (Session.view == "sermon" || Session.view == "notes") && !root.any-popup && !event.modifiers.control && !event.modifiers.alt && !event.modifiers.meta {
+                if event.text == Key.UpArrow { Studio.key-name = "up"; Studio.key-tick += 1; return accept; }
+                if event.text == Key.DownArrow { Studio.key-name = "down"; Studio.key-tick += 1; return accept; }
+                if event.text == Key.PageUp { Studio.key-name = "pgup"; Studio.key-tick += 1; return accept; }
+                if event.text == Key.PageDown { Studio.key-name = "pgdn"; Studio.key-tick += 1; return accept; }
+                if event.text == Key.Home { Studio.key-name = "home"; Studio.key-tick += 1; return accept; }
+                if event.text == Key.End { Studio.key-name = "end"; Studio.key-tick += 1; return accept; }
+            }
             if Session.view == "read" && !root.any-popup {
                 if event.modifiers.alt && event.text == Key.LeftArrow { if Session.can-back { Session.go-back(); } return accept; }
                 if event.text == Key.LeftArrow || event.text == Key.PageUp { if Session.can-prev { Session.step(-1); } return accept; }
