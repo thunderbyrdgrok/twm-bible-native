@@ -21,6 +21,7 @@ mkdir -p "$T/share/$APP/assets"; cp assets/twmintro.mp4 "$T/share/$APP/assets/"
 cp packaging/linux/$APP.desktop "$T/share/applications/"
 cp assets/icon-256.png "$T/share/icons/hicolor/256x256/apps/$APP.png"
 cp README.md LICENSE fonts/OFL.txt "$T/"
+cp packaging/linux/install.sh "$T/"
 tar -C dist -czf "$T.tar.gz" "$(basename "$T")"
 rm -rf "$T"
 
