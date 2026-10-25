@@ -1175,6 +1175,10 @@ fn show_sense(ui: &AppWindow, core: &Rc<std::cell::RefCell<Core>>, sense: &texts
     let generation = slot.fetch_add(1, Ordering::Relaxed) + 1;
     let weak = ui.as_weak();
     std::thread::spawn(move || {
+        // Dev build only: TWM_LOOKUP_DELAY_MS slows the lookup so the loading animation can be seen.
+        if let Some(ms) = std::env::var("TWM_LOOKUP_DELAY_MS").ok().and_then(|v| v.parse::<u64>().ok()) {
+            std::thread::sleep(Duration::from_millis(ms));
+        }
         let text = define::lookup_modern(&cache, &key);
         let slot = slot.clone();
         let _ = slint::invoke_from_event_loop(move || {
