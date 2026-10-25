@@ -19,6 +19,7 @@ use twm_bible_native::define;
 use twm_bible_native::export;
 use twm_bible_native::extras::{self, History, Place};
 use twm_bible_native::flow;
+use twm_bible_native::sharecard;
 
 slint::include_modules!();
 
@@ -90,6 +91,7 @@ struct Core {
     pending_backup: Option<extras::Backup>,
     hit_width: f32,
     terms: Vec<String>,
+    share_bg: [u8; 3],
     outreach: twm_bible_native::outreach::Store,
     outreach_ui: outreach_ui::OutreachState,
 }
@@ -106,6 +108,7 @@ struct Models {
     links: Rc<VecModel<LinkChip>>,
     bookmarks: Rc<VecModel<BookmarkRow>>,
     word_hits: Rc<VecModel<HitRow>>,
+    share_verses: Rc<VecModel<ShareRow>>,
     out_contacts: Rc<VecModel<ContactRow>>,
     out_pool: Rc<VecModel<ContactRow>>,
     out_cells: Rc<VecModel<CalCell>>,
@@ -149,6 +152,7 @@ impl Core {
             pending_backup: None,
             hit_width: 560.0,
             terms: Vec::new(),
+            share_bg: [0x12, 0x14, 0x1a],
             outreach: twm_bible_native::outreach::Store::load(&outreach_dir),
             outreach_ui: outreach_ui::OutreachState::new(),
         };
@@ -1303,6 +1307,166 @@ fn session_intro(ui: &AppWindow, available: bool) {
     ui.global::<Session>().set_intro_available(available);
 }
 
+enum SharePick {
+    OpenAndMarks,
+    ThisVerse,
+    Highlights,
+}
+
+fn push_share_color(ui: &AppWindow, core: &mut Core, rgb: [u8; 3]) {
+    core.share_bg = rgb;
+    let ink = sharecard::ink_for(rgb);
+    let session = ui.global::<Session>();
+    session.set_share_bg(slint::Color::from_rgb_u8(rgb[0], rgb[1], rgb[2]));
+    session.set_share_ink(slint::Color::from_rgb_u8(ink[0], ink[1], ink[2]));
+    session.set_share_hex(sharecard::hex_string(rgb).into());
+}
+
+fn share_entries(core: &Core, models: &Models) -> Vec<texts::PassageEntry> {
+    let verses = core.chapter_verses();
+    let mut entries = Vec::new();
+    for index in 0..models.share_verses.row_count() {
+        let Some(row) = models.share_verses.row_data(index) else {
+            continue;
+        };
+        if !row.on {
+            continue;
+        }
+        let number = row.number as usize;
+        if number == 0 {
+            continue;
+        }
+        entries.push(texts::PassageEntry {
+            book_id: core.book_id.clone(),
+            name: core.book_name(),
+            chapter: core.chapter,
+            verse: number,
+            text: verses.get(number - 1).cloned().unwrap_or_default(),
+        });
+    }
+    entries
+}
+
+fn refresh_share_text(ui: &AppWindow, core: &Core, models: &Models) {
+    let entries = share_entries(core, models);
+    let session = ui.global::<Session>();
+    session.set_share_count(entries.len() as i32);
+    if entries.is_empty() {
+        session.set_share_reference(core.place_title().into());
+        session.set_share_preview("No verses checked.".into());
+        return;
+    }
+    let passage = texts::format_passage(&entries, &core.version_label());
+    let body = entries
+        .iter()
+        .map(|entry| format!("{} {}", entry.verse, entry.text.trim()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut preview: String = body.chars().take(420).collect();
+    if body.chars().count() > 420 {
+        preview.push('…');
+    }
+    session.set_share_reference(passage.reference.into());
+    session.set_share_preview(preview.into());
+}
+
+fn fill_share_rows(core: &Core, models: &Models, mode: SharePick) {
+    let verses = core.chapter_verses().to_vec();
+    let highlighted: Vec<usize> = verses
+        .iter()
+        .enumerate()
+        .filter_map(|(index, _)| {
+            let number = index + 1;
+            let key = texts::ref_key(&core.book_id, core.chapter, number);
+            core.settings.highlights.contains_key(&key).then_some(number)
+        })
+        .collect();
+    let rows = verses
+        .iter()
+        .enumerate()
+        .map(|(index, text)| {
+            let number = index + 1;
+            let on = match mode {
+                SharePick::OpenAndMarks => {
+                    if highlighted.is_empty() {
+                        core.verse.map(|verse| verse == number).unwrap_or(number == 1)
+                    } else {
+                        highlighted.contains(&number) || core.verse == Some(number)
+                    }
+                }
+                SharePick::ThisVerse => core.verse.map(|verse| verse == number).unwrap_or(number == 1),
+                SharePick::Highlights => highlighted.contains(&number),
+            };
+            ShareRow {
+                number: number as i32,
+                text: text.clone().into(),
+                on,
+            }
+        })
+        .collect::<Vec<_>>();
+    models.share_verses.set_vec(rows);
+}
+
+fn apply_share_hex(ui: &AppWindow, core: &mut Core, text: &str) -> bool {
+    match sharecard::parse_hex(text) {
+        Some(rgb) => {
+            push_share_color(ui, core, rgb);
+            true
+        }
+        None => {
+            show_status(ui, core, "Use a color like #1d3a2e.");
+            false
+        }
+    }
+}
+
+fn share_card(core: &Core, models: &Models) -> Result<(sharecard::CardImage, String, String), String> {
+    let entries = share_entries(core, models);
+    if entries.is_empty() {
+        return Err("Choose at least one verse.".into());
+    }
+    let passage = texts::format_passage(&entries, &core.version_label());
+    let lines = entries
+        .iter()
+        .map(|entry| format!("{} {}", entry.verse, entry.text.trim()))
+        .collect::<Vec<_>>();
+    let card = sharecard::render(&lines, &passage.reference, core.share_bg)?;
+    let name = sharecard::file_stem(&passage.reference);
+    Ok((card, passage.text, name))
+}
+
+fn copy_png(card: &sharecard::CardImage) -> Result<(), String> {
+    let failed = "The clipboard is not available. Save the picture instead.";
+    if let Ok(mut clipboard) = arboard::Clipboard::new() {
+        let image = arboard::ImageData {
+            width: card.width as usize,
+            height: card.height as usize,
+            bytes: std::borrow::Cow::Borrowed(card.rgba.as_slice()),
+        };
+        if clipboard.set_image(image).is_ok() {
+            return Ok(());
+        }
+    }
+    let mut child = twm_bible_native::quiet(
+        Command::new("wl-copy")
+            .args(["-t", "image/png"])
+            .stdin(std::process::Stdio::piped()),
+    )
+    .spawn()
+    .map_err(|_| failed.to_string())?;
+    use std::io::Write;
+    if let Some(stdin) = child.stdin.as_mut() {
+        stdin.write_all(&card.png).map_err(|err| err.to_string())?;
+    }
+    drop(child.stdin.take());
+    let status = child.wait().map_err(|err| err.to_string())?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(failed.into())
+    }
+}
+
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     // The platform has to exist first. The native window reads this id when it is shown.
@@ -1319,6 +1483,7 @@ fn main() -> Result<(), slint::PlatformError> {
         links: Rc::new(VecModel::from(Vec::<LinkChip>::new())),
         bookmarks: Rc::new(VecModel::from(Vec::<BookmarkRow>::new())),
         word_hits: Rc::new(VecModel::from(Vec::<HitRow>::new())),
+        share_verses: Rc::new(VecModel::from(Vec::<ShareRow>::new())),
         out_contacts: Rc::new(VecModel::from(Vec::new())),
         out_pool: Rc::new(VecModel::from(Vec::new())),
         out_cells: Rc::new(VecModel::from(Vec::new())),
@@ -1337,6 +1502,7 @@ fn main() -> Result<(), slint::PlatformError> {
     session.set_links(ModelRc::from(models.links.clone()));
     session.set_bookmarks(ModelRc::from(models.bookmarks.clone()));
     session.set_word_hits(ModelRc::from(models.word_hits.clone()));
+    session.set_share_verses(ModelRc::from(models.share_verses.clone()));
     session.set_clock(clock_now().into());
     apply_theme(&ui, &mut core.borrow_mut());
     after_nav(&ui, &core.borrow(), &models);
@@ -1848,6 +2014,157 @@ fn main() -> Result<(), slint::PlatformError> {
             show_sense(&ui, &core, &sense, token);
             show_word_hits(&ui, &core, &models, &word);
             ui.global::<Session>().set_popup_open(true);
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_open_share(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let mut app = core.borrow_mut();
+            fill_share_rows(&app, &models, SharePick::OpenAndMarks);
+            let color = app.share_bg;
+            push_share_color(&ui, &mut app, color);
+            refresh_share_text(&ui, &app, &models);
+            drop(app);
+            let session = ui.global::<Session>();
+            session.set_popup_open(false);
+            session.set_share_open(true);
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_toggle(move |number| {
+            let Some(ui) = weak.upgrade() else { return };
+            for index in 0..models.share_verses.row_count() {
+                let Some(mut row) = models.share_verses.row_data(index) else {
+                    continue;
+                };
+                if row.number == number {
+                    row.on = !row.on;
+                    models.share_verses.set_row_data(index, row);
+                    break;
+                }
+            }
+            refresh_share_text(&ui, &core.borrow(), &models);
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_set_hex(move |text| {
+            let Some(ui) = weak.upgrade() else { return };
+            apply_share_hex(&ui, &mut core.borrow_mut(), text.as_str());
+        });
+    }
+    {
+        let core = core.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_swatch(move |text| {
+            let Some(ui) = weak.upgrade() else { return };
+            apply_share_hex(&ui, &mut core.borrow_mut(), text.as_str());
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_this_verse(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let app = core.borrow();
+            fill_share_rows(&app, &models, SharePick::ThisVerse);
+            refresh_share_text(&ui, &app, &models);
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_highlights(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let app = core.borrow();
+            fill_share_rows(&app, &models, SharePick::Highlights);
+            refresh_share_text(&ui, &app, &models);
+            if ui.global::<Session>().get_share_count() == 0 {
+                drop(app);
+                show_status(&ui, &mut core.borrow_mut(), "No highlights in this chapter.");
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_copy_image(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let picture = {
+                let app = core.borrow();
+                share_card(&app, &models)
+            };
+            match picture {
+                Ok((card, _, _)) => match copy_png(&card) {
+                    Ok(()) => show_status(&ui, &mut core.borrow_mut(), "Copied the picture."),
+                    Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+                },
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_save(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let card = {
+                let app = core.borrow();
+                share_card(&app, &models)
+            };
+            let card = match card {
+                Ok(card) => card,
+                Err(err) => {
+                    show_status(&ui, &mut core.borrow_mut(), err);
+                    return;
+                }
+            };
+            let Some(path) = rfd::FileDialog::new()
+                .set_title("Save the share picture")
+                .set_file_name(&card.2)
+                .add_filter("PNG image", &["png"])
+                .save_file()
+            else {
+                return;
+            };
+            match fs::write(&path, &card.0.png) {
+                Ok(()) => show_status(
+                    &ui,
+                    &mut core.borrow_mut(),
+                    format!("Saved {}.", path.display()),
+                ),
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err.to_string()),
+            }
+        });
+    }
+    {
+        let core = core.clone();
+        let models = models.clone();
+        let weak = weak.clone();
+        ui.global::<Session>().on_share_copy_text(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let picture = {
+                let app = core.borrow();
+                share_card(&app, &models)
+            };
+            match picture {
+                Ok((_, text, _)) => match copy_to_clipboard(&text) {
+                    Ok(()) => show_status(&ui, &mut core.borrow_mut(), "Copied the verses."),
+                    Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+                },
+                Err(err) => show_status(&ui, &mut core.borrow_mut(), err),
+            }
         });
     }
     {

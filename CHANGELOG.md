@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (beta) — Share
+
+- Hold a word, then SHARE, to make a picture of the verses you check. Pick a background color from the swatches or type a hex color. Copy the picture, save a PNG, or copy the verse text.
+
 ## Unreleased (beta) — Study Desk
 
 - Home: new Study Desk card under Library with Sermon prep and Notes.

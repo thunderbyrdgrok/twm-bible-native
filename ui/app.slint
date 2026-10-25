@@ -15,6 +15,7 @@ export struct HitRow { reference: string, snippet: string, lines: [HitLine] }
 export struct VersionRow { id: string, label: string, enabled: bool, active: bool, builtin: bool, compare: bool }
 export struct LiveRow { id: string, label: string, active: bool }
 export struct LinkChip { label: string, book-id: string, chapter: int, verse: int }
+export struct ShareRow { number: int, text: string, on: bool }
 
 export global Theme {
     in-out property <bool> light: false;
@@ -101,6 +102,14 @@ export global Session {
     in-out property <length> popup-bottom: 0px;
     in-out property <length> popup-line: 0px;
     in-out property <bool> popup-open: false;
+    in-out property <bool> share-open: false;
+    in-out property <color> share-bg: #12141a;
+    in-out property <color> share-ink: #f7f4ee;
+    in-out property <string> share-hex: "#12141a";
+    in-out property <string> share-reference: "";
+    in-out property <string> share-preview: "";
+    in-out property <int> share-count: 0;
+    in-out property <[ShareRow]> share-verses;
     in-out property <bool> ref-popup: false;
     in-out property <bool> chapter-popup: false;
     in-out property <bool> intro-available: false;
@@ -143,12 +152,32 @@ export global Session {
     callback open-bookmark(int);
     callback delete-bookmark(int);
     callback word-popup(int);
+    callback open-share();
+    callback share-toggle(int);
+    callback share-set-hex(string);
+    callback share-swatch(string);
+    callback share-copy-image();
+    callback share-save();
+    callback share-copy-text();
+    callback share-this-verse();
+    callback share-highlights();
     callback verse-word-click(int, float, float);
     callback verse-word-hold(int, float, float);
     callback text-width(float);
     callback search-this-word();
     callback play-intro();
     callback set-intro-on-start(bool);
+}
+
+component ColorChip inherits Rectangle {
+    in property <string> hex;
+    in property <color> chip;
+    width: 26px;
+    height: 26px;
+    background: root.chip;
+    border-width: Session.share-hex == root.hex ? 2px : 1px;
+    border-color: Session.share-hex == root.hex ? Theme.cyan : Theme.line;
+    TouchArea { mouse-cursor: pointer; clicked => { Session.share-swatch(root.hex); } }
 }
 
 component Kicker inherits Text {
@@ -2938,7 +2967,7 @@ component OptionsView inherits Flickable {
         Rectangle { width: 180px; Btn { label: "IMPORT JSON"; active: true; clicked => { Session.import-bible(); } } }
         Kicker { text: "KEYBOARD SHORTCUTS"; }
         Text {
-            text: "Ctrl+F  Search\nCtrl+G  Book, chapter and verse\nCtrl+B  Bookmark the selected verse\nLeft / Right, PgUp / PgDn  Previous or next chapter (Read view, no text box focused)\nAlt+Left  Back\nF11  Reading mode on or off\nEsc  Close a popup, or leave reading mode\nHold a word for 0.5 s  Word popup\nOn macOS, Cmd works in place of Ctrl.";
+            text: "Ctrl+F  Search\nCtrl+G  Book, chapter and verse\nCtrl+B  Bookmark the selected verse\nLeft / Right, PgUp / PgDn  Previous or next chapter (Read view, no text box focused)\nAlt+Left  Back\nF11  Reading mode on or off\nEsc  Close a popup, or leave reading mode\nHold a word for 0.5 s  Word popup\nShare  Picture of the checked verses, on a color you choose\nOn macOS, Cmd works in place of Ctrl.";
             wrap: word-wrap;
             font-family: "Share Tech Mono";
             font-size: 13px;
@@ -2995,7 +3024,7 @@ export component AppWindow inherits Window {
     private property <bool> nav-compact: false;
     changed width => { self.narrow = self.width < 900px; self.nav-compact = self.width < 1120px; }
     init => { self.narrow = self.width < 900px; self.nav-compact = self.width < 1120px; }
-    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open || Studio.confirm-open;
+    private property <bool> any-popup: Session.popup-open || Session.share-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open || Studio.confirm-open;
     private property <int> focus-watch: Session.focus-request;
     private property <string> view-watch: Session.view;
     changed any-popup => { root-fs.focus(); }
@@ -3013,6 +3042,7 @@ export component AppWindow inherits Window {
                 else if Outreach.confirm-open { Outreach.confirm-open = false; }
                 else if Outreach.event-open { Outreach.event-open = false; }
                 else if Outreach.card-open { Outreach.card-open = false; }
+                else if Session.share-open { Session.share-open = false; }
                 else if Session.popup-open { Session.popup-open = false; }
                 else if Session.ref-popup { Session.ref-popup = false; }
                 else if Session.chapter-popup { Session.chapter-popup = false; }
@@ -3360,6 +3390,178 @@ export component AppWindow inherits Window {
                     Btn { label: "COPY VERSE"; clicked => { Session.copy-verse(); } }
                     Btn { label: "SEARCH THIS WORD"; active: true; clicked => { Session.search-this-word(); } }
                     Btn { label: "CLOSE"; clicked => { Session.popup-open = false; } }
+                }
+                Btn { label: "SHARE"; active: true; clicked => { Session.open-share(); } }
+            }
+        }
+    }
+    if Session.share-open: Rectangle {
+        z: 12;
+        background: #00000088;
+        TouchArea { clicked => { Session.share-open = false; } }
+        share-panel := Rectangle {
+            width: min(760px, parent.width - 40px);
+            height: min(parent.height - 40px, share-col.preferred-height + 32px);
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            TouchArea {}
+            property <string> hex-watch: Session.share-hex;
+            changed hex-watch => { hex-field.text = share-panel.hex-watch; }
+            share-col := VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                Kicker { text: "SHARE"; }
+                Text {
+                    text: Session.share-reference;
+                    wrap: word-wrap;
+                    font-family: "Rajdhani";
+                    font-weight: 700;
+                    font-size: 20px;
+                    color: Theme.cyan;
+                }
+                Text {
+                    text: "Check the verses for the picture. The background color is the one you pick below.";
+                    wrap: word-wrap;
+                    font-family: "Rajdhani";
+                    font-weight: 600;
+                    font-size: 15px;
+                    color: Theme.muted;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle { width: 140px; Btn { label: "THIS VERSE"; clicked => { Session.share-this-verse(); } } }
+                    Rectangle { width: 150px; Btn { label: "HIGHLIGHTS"; clicked => { Session.share-highlights(); } } }
+                    Text {
+                        text: "\{Session.share-count} checked";
+                        horizontal-stretch: 1;
+                        font-family: "Share Tech Mono";
+                        font-size: 12px;
+                        color: Theme.muted;
+                        vertical-alignment: center;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 12px;
+                    Flickable {
+                        height: 220px;
+                        horizontal-stretch: 1;
+                        VerticalLayout {
+                            width: parent.width;
+                            spacing: 2px;
+                            for verse in Session.share-verses: Rectangle {
+                                height: 30px;
+                                background: verse.on ? Theme.hover : transparent;
+                                border-width: 1px;
+                                border-color: verse.on ? Theme.cyan : transparent;
+                                HorizontalLayout {
+                                    padding-left: 8px;
+                                    padding-right: 8px;
+                                    spacing: 8px;
+                                    alignment: center;
+                                    Rectangle {
+                                        width: 14px;
+                                        height: 14px;
+                                        border-width: 1px;
+                                        border-color: verse.on ? Theme.cyan : Theme.line;
+                                        background: verse.on ? Theme.cyan : transparent;
+                                    }
+                                    Text {
+                                        text: "\{verse.number}";
+                                        width: 32px;
+                                        font-family: "Share Tech Mono";
+                                        font-size: 12px;
+                                        color: Theme.cyan;
+                                        vertical-alignment: center;
+                                    }
+                                    Text {
+                                        text: verse.text;
+                                        horizontal-stretch: 1;
+                                        overflow: elide;
+                                        font-family: "Rajdhani";
+                                        font-weight: 600;
+                                        font-size: 14px;
+                                        color: Theme.text;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                TouchArea { mouse-cursor: pointer; clicked => { Session.share-toggle(verse.number); } }
+                            }
+                        }
+                    }
+                    Rectangle {
+                        width: 230px;
+                        height: 220px;
+                        background: Session.share-bg;
+                        border-width: 1px;
+                        border-color: Theme.line;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 8px;
+                            Text {
+                                text: Session.share-reference;
+                                wrap: word-wrap;
+                                font-family: "Share Tech Mono";
+                                font-size: 11px;
+                                color: Session.share-ink;
+                            }
+                            Text {
+                                text: Session.share-preview;
+                                wrap: word-wrap;
+                                overflow: elide;
+                                vertical-stretch: 1;
+                                font-family: "Rajdhani";
+                                font-weight: 600;
+                                font-size: 15px;
+                                color: Session.share-ink;
+                            }
+                            Text {
+                                text: "TWM Bible";
+                                font-family: "Rajdhani";
+                                font-weight: 700;
+                                font-size: 12px;
+                                color: Session.share-ink;
+                            }
+                        }
+                    }
+                }
+                Kicker { text: "BACKGROUND"; }
+                HorizontalLayout {
+                    spacing: 6px;
+                    ColorChip { hex: "#12141a"; chip: #12141a; }
+                    ColorChip { hex: "#0e091d"; chip: #0e091d; }
+                    ColorChip { hex: "#4c1d2a"; chip: #4c1d2a; }
+                    ColorChip { hex: "#1d3a2e"; chip: #1d3a2e; }
+                    ColorChip { hex: "#16344a"; chip: #16344a; }
+                    ColorChip { hex: "#2c2140"; chip: #2c2140; }
+                    ColorChip { hex: "#6e2432"; chip: #6e2432; }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    ColorChip { hex: "#243038"; chip: #243038; }
+                    ColorChip { hex: "#3d4128"; chip: #3d4128; }
+                    ColorChip { hex: "#05080e"; chip: #05080e; }
+                    ColorChip { hex: "#f3ead7"; chip: #f3ead7; }
+                    ColorChip { hex: "#fbf7ef"; chip: #fbf7ef; }
+                    ColorChip { hex: "#e6d3b4"; chip: #e6d3b4; }
+                    ColorChip { hex: "#e7f3f6"; chip: #e7f3f6; }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    hex-field := Field {
+                        horizontal-stretch: 1;
+                        placeholder: "#1d3a2e";
+                        init => { self.text = Session.share-hex; }
+                        accepted(value) => { Session.share-set-hex(value); }
+                    }
+                    Rectangle { width: 88px; Btn { label: "APPLY"; active: true; clicked => { Session.share-set-hex(hex-field.text); } } }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Rectangle { horizontal-stretch: 1; Btn { label: "COPY IMAGE"; active: true; clicked => { Session.share-copy-image(); } } }
+                    Rectangle { horizontal-stretch: 1; Btn { label: "SAVE PNG"; clicked => { Session.share-save(); } } }
+                    Rectangle { horizontal-stretch: 1; Btn { label: "COPY TEXT"; clicked => { Session.share-copy-text(); } } }
+                    Rectangle { width: 88px; Btn { label: "CLOSE"; clicked => { Session.share-open = false; } } }
                 }
             }
         }
