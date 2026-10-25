@@ -43,3 +43,6 @@ translation (KJV default).
 ## Notes
 List + editor (title and plain text body), autosaved to `<state dir>/studydesk/notes.json` (0600),
 delete with confirmation.
+
+## Install log
+- 2026-10-20 22:00 CDT: installed to laptop ~/Work/twm-bible-dev-test/twm-bible-native, sha256 4c25b0eec129516f0bd16534255096047681b99882c94cb4b006cc346d98978a (built from 5792224). Previous beta backed up to ~/Work/backups/twm-bible-dev-test-native.20261020-2200.pre-studydesk.bak.
