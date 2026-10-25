@@ -38,7 +38,8 @@ cp assets/icon-256.png "$AD/$APP.png"
 # Bundle libraries that winit/xkbcommon load with dlopen (not linked, so easy to miss).
 mkdir -p "$AD/usr/lib"
 for lib in libxkbcommon.so.0 libxkbcommon-x11.so.0; do
-  p="$(/sbin/ldconfig -p | awk -v l="$lib" '$1==l && /x86-64|aarch64/ {print $NF; exit}')"
+  # awk reads all input (no early exit) so ldconfig never gets SIGPIPE under pipefail
+  p="$(/sbin/ldconfig -p | awk -v l="$lib" '$1==l && /x86-64|aarch64/ && !f {print $NF; f=1}')"
   if [[ -n "$p" ]]; then cp -L "$p" "$AD/usr/lib/"; else echo "warning: $lib not found on build host" >&2; fi
 done
 cat > "$AD/AppRun" <<'RUN'
