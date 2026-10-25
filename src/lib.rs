@@ -17,3 +17,4 @@ pub fn quiet(command: &mut std::process::Command) -> &mut std::process::Command 
     }
     command
 }
+pub mod studydesk;

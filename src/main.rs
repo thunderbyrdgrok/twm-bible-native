@@ -23,6 +23,7 @@ use twm_bible_native::flow;
 slint::include_modules!();
 
 mod outreach_ui;
+mod studydesk_ui;
 
 struct Bundled {
     id: &'static str,
@@ -1340,6 +1341,7 @@ fn main() -> Result<(), slint::PlatformError> {
     apply_theme(&ui, &mut core.borrow_mut());
     after_nav(&ui, &core.borrow(), &models);
     outreach_ui::setup(&ui, &core, &models);
+    let desk = studydesk_ui::setup(&ui, &core);
 
     let weak = ui.as_weak();
 
@@ -2169,10 +2171,12 @@ fn main() -> Result<(), slint::PlatformError> {
         let core = core.clone();
         let models = models.clone();
         let weak = weak.clone();
+        let desk = desk.clone();
         ui.window().on_close_requested(move || {
             if let Some(ui) = weak.upgrade() {
                 commit_note(&ui, &core, &models, false);
             }
+            studydesk_ui::flush(&desk);
             slint::CloseRequestResponse::HideWindow
         });
     }
@@ -2218,6 +2222,7 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     ui.run()?;
+    studydesk_ui::flush(&desk);
     drop(timer);
     Ok(())
 }

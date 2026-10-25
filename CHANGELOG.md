@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (beta) — Study Desk
+
+- Home: new Study Desk card under Library with Sermon prep and Notes.
+- Sermon prep: block editor (headings, lists, quotes, images, slide markers, fonts, sizes, alignment, inline bold/italic/underline, undo/redo), autosave, multiple sermons, HTML/Markdown export.
+- Scripture side panel: passage lookup and word search with insert-as-quote.
+- Notes page.
+- See docs/STUDY-DESK.md.
+
 ## 1.2.0
 
 ### Outreach

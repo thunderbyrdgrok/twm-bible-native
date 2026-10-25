@@ -186,6 +186,7 @@ component Field inherits Rectangle {
     callback accepted(string);
     height: 36px;
     public function focus-input() { input.focus(); }
+    public function select-all-input() { input.select-all(); }
     background: Theme.input;
     border-width: 1px;
     border-color: Theme.line;
@@ -1305,6 +1306,853 @@ component PrayerCard inherits Rectangle {
     }
 }
 
+// ================================================================ STUDY DESK
+// Sermon prep (block editor + scripture side panel) and Notes. Wired in src/studydesk_ui.rs.
+
+export struct DeskBlock { id: int, kind: string, text: string, extra: string, rich: styled-text, has-image: bool, img: image, img-ratio: float, font: string, size: int, bold: bool, align: string, marker: int, placeholder: string }
+export struct DeskDoc { id: string, title: string, updated: string, current: bool }
+export struct DeskVerse { key: string, reference: string, text: string, selected: bool }
+export struct DeskChip { id: string, label: string, active: bool }
+
+export global Studio {
+    // sermon list + current document
+    in-out property <[DeskDoc]> sermons;
+    in-out property <[DeskBlock]> blocks;
+    in-out property <string> doc-id: "";
+    in-out property <string> doc-title: "";
+    in-out property <string> doc-font: "Rajdhani";
+    in-out property <int> doc-size: 18;
+    in-out property <string> save-state: "";
+    in-out property <bool> can-undo: false;
+    in-out property <bool> can-redo: false;
+    // the block the caret is in, and its selection (byte offsets)
+    in-out property <int> current: 0;
+    in-out property <int> sel-a: 0;
+    in-out property <int> sel-b: 0;
+    in-out property <string> cur-kind: "p";
+    in-out property <string> cur-font: "";
+    in-out property <int> cur-size: 18;
+    in-out property <string> cur-align: "left";
+    // focus requests from Rust: the block with this id takes focus with this selection
+    in-out property <int> focus-tick: 0;
+    in-out property <int> focus-id: -1;
+    in-out property <int> focus-a: -1;
+    in-out property <int> focus-b: -1;
+    in-out property <length> scroll-to: -1px;
+    in-out property <int> scroll-tick: 0;
+    in-out property <bool> list-open: true;
+    in-out property <bool> panel-open: true;
+    // scripture panel
+    in-out property <string> panel-mode: "passage";
+    in-out property <string> panel-query: "";
+    in-out property <string> panel-summary: "Type a passage such as John 3:16-18, or switch to SEARCH.";
+    in-out property <[DeskChip]> versions;
+    in-out property <[DeskVerse]> results;
+    in-out property <[DeskVerse]> picked;
+    in-out property <string> picked-ref: "";
+    // confirm delete (sermon or note)
+    in-out property <bool> confirm-open: false;
+    in-out property <string> confirm-text: "";
+    in-out property <bool> export-open: false;
+    // notes
+    in-out property <[DeskDoc]> notes;
+    in-out property <string> note-id: "";
+    in-out property <string> note-title: "";
+    in-out property <string> note-body: "";
+    in-out property <string> note-state: "";
+    in-out property <int> note-tick: 0;
+    in-out property <int> note-title-tick: 0;
+    in-out property <string> serif-family: "serif";
+    in-out property <string> sans-family: "sans-serif";
+    pure public function fam(f: string) -> string {
+        return f == "Serif" ? self.serif-family : f == "Sans" ? self.sans-family : f;
+    }
+
+    callback open-sermons();
+    callback open-notes();
+    callback new-sermon();
+    callback open-sermon(string);
+    callback rename-sermon(string);
+    callback ask-delete-sermon();
+    callback confirm-yes();
+    callback block-edited(int, string);
+    callback block-extra(int, string);
+    callback block-focus(int);
+    callback block-blur(int);
+    callback block-sel(int, int, int);
+    callback split-block(int, int);
+    callback merge-up(int) -> bool;
+    callback step-focus(int, int, int) -> bool;
+    callback set-kind(string);
+    callback set-font(string);
+    callback bump-size(int);
+    callback set-align(string);
+    callback format(string);
+    callback add-block(string);
+    callback move-block(int);
+    callback delete-block();
+    callback pick-image(int);
+    callback undo();
+    callback redo();
+    callback export(string);
+    callback set-panel-version(string);
+    callback lookup(string);
+    callback toggle-verse(int);
+    callback unpick(int);
+    callback clear-picked();
+    callback insert-picked();
+    callback new-note();
+    callback open-note(string);
+    callback note-edited(string, string);
+    callback ask-delete-note();
+}
+
+component DeskBtn inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    in property <bool> enabled: true;
+    in property <string> family: "Rajdhani";
+    in property <bool> italic: false;
+    in property <bool> underline: false;
+    callback clicked();
+    height: 28px;
+    min-width: 26px;
+    horizontal-stretch: 1;
+    border-width: 1px;
+    border-color: root.active ? Theme.cyan : dtouch.has-hover && root.enabled ? Theme.line : Theme.line-soft;
+    background: root.active || (dtouch.has-hover && root.enabled) ? Theme.hover : transparent;
+    opacity: root.enabled ? 1 : 0.4;
+    dlabel := Text {
+        text: root.label;
+        color: root.active ? Theme.cyan : Theme.muted;
+        font-family: root.family;
+        font-weight: 700;
+        font-italic: root.italic;
+        font-size: 13px;
+        letter-spacing: 0.6px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        overflow: elide;
+        width: parent.width - 4px;
+    }
+    if root.underline: Rectangle {
+        x: (parent.width - 10px) / 2;
+        y: parent.height / 2 + 8px;
+        width: 10px;
+        height: 1px;
+        background: root.active ? Theme.cyan : Theme.muted;
+    }
+    dtouch := TouchArea { mouse-cursor: root.enabled ? pointer : default; clicked => { if root.enabled { root.clicked(); } } }
+}
+
+component DeskBlockView inherits Rectangle {
+    in property <DeskBlock> b;
+    in property <int> index;
+    in-out property <string> text;
+    in-out property <string> extra;
+    callback caret(length);
+    private property <length> fsize: root.b.size * 1px;
+    private property <bool> listy: root.b.kind == "bullet" || root.b.kind == "number";
+    private property <bool> quote: root.b.kind == "quote";
+    private property <bool> slide: root.b.kind == "slide";
+    private property <bool> pic: root.b.kind == "image";
+    private property <bool> editing: input.has-focus;
+    private property <int> tick: Studio.focus-tick;
+    private property <length> left-pad: root.listy ? 30px : root.quote ? 18px : root.slide ? 12px : 0px;
+    private property <length> right-pad: root.quote || root.slide ? 12px : 0px;
+    private property <length> text-w: root.width - root.left-pad - root.right-pad;
+    private property <length> text-h: max(root.editing || root.text == "" ? input.preferred-height : rich.preferred-height, root.fsize * 1.35);
+    private property <length> img-h: !root.b.has-image ? 0px : min(360px, max(60px, root.text-w * root.b.img-ratio));
+    private property <length> top: root.slide ? 30px : root.pic ? root.img-h + 8px + (root.b.has-image ? 0px : 44px) : root.quote ? 8px : 2px;
+    private property <length> bottom: root.quote ? 30px + 8px : root.slide ? (root.b.has-image ? root.img-h + 46px : 40px) : 2px;
+    height: root.top + root.text-h + root.bottom;
+    background: root.quote ? Theme.hover : transparent;
+    border-width: root.slide ? 1px : 0px;
+    border-color: Theme.cyan;
+    border-radius: root.slide ? 4px : 0px;
+
+    function grab() {
+        input.focus();
+        if Studio.focus-a >= 0 {
+            input.set-selection-offsets(Studio.focus-a, Studio.focus-b >= 0 ? Studio.focus-b : Studio.focus-a);
+        }
+    }
+    init => { if Studio.focus-id == root.b.id { root.grab(); } }
+    changed tick => { if Studio.focus-id == root.b.id { root.grab(); } }
+
+    // quote bar
+    if root.quote: Rectangle { x: 0; y: 0; width: 4px; height: parent.height; background: Theme.cyan; }
+    // slide header
+    if root.slide: Rectangle {
+        x: 0; y: 0; width: parent.width; height: 24px;
+        background: Theme.cyan.with-alpha(0.16);
+        Text {
+            x: 12px;
+            text: "SLIDE " + root.b.marker;
+            font-family: "Share Tech Mono"; font-size: 12px; letter-spacing: 2px;
+            color: Theme.cyan; vertical-alignment: center; height: 100%;
+        }
+        Rectangle {
+            x: parent.width - 120px; y: 2px; width: 112px; height: 20px;
+            border-width: 1px; border-color: stouch.has-hover ? Theme.cyan : Theme.line-soft;
+            Text { text: root.b.has-image ? "CHANGE IMAGE" : "ADD IMAGE"; font-family: "Rajdhani"; font-weight: 700; font-size: 11px; color: Theme.cyan; horizontal-alignment: center; vertical-alignment: center; }
+            stouch := TouchArea { mouse-cursor: pointer; clicked => { Studio.pick-image(root.index); } }
+        }
+    }
+    // image (image block on top, slide image below the title)
+    if root.b.has-image: Image {
+        x: root.left-pad;
+        y: root.pic ? 0px : root.top + root.text-h + 8px;
+        width: root.text-w;
+        height: root.img-h;
+        source: root.b.img;
+        image-fit: contain;
+        horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
+    }
+    if root.pic && !root.b.has-image: Rectangle {
+        x: 0; y: 0; width: parent.width; height: 40px;
+        border-width: 1px; border-color: Theme.line;
+        Text { text: "CHOOSE AN IMAGE…"; font-family: "Rajdhani"; font-weight: 700; font-size: 14px; color: Theme.cyan; horizontal-alignment: center; vertical-alignment: center; }
+        TouchArea { mouse-cursor: pointer; clicked => { Studio.pick-image(root.index); } }
+    }
+    // list marker
+    if root.listy: Text {
+        x: 0px;
+        y: root.top;
+        width: 22px;
+        text: root.b.kind == "bullet" ? "•" : root.b.marker + ".";
+        font-family: root.b.font;
+        font-size: root.fsize;
+        color: Theme.cyan;
+        horizontal-alignment: right;
+    }
+    rich := StyledText {
+        x: root.left-pad;
+        y: root.top;
+        width: root.text-w;
+        visible: !root.editing && root.text != "";
+        text: root.b.rich;
+        default-font-family: root.b.font;
+        default-font-size: root.fsize;
+        default-color: root.pic ? Theme.muted : Theme.text;
+        horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
+    }
+    if !root.editing && root.text == "": Text {
+        x: root.left-pad;
+        y: root.top;
+        width: root.text-w;
+        text: root.b.placeholder;
+        font-family: root.b.font;
+        font-size: root.fsize;
+        font-weight: root.b.bold ? 700 : 500;
+        color: Theme.muted.with-alpha(0.55);
+        horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
+    }
+    input := TextInput {
+        x: root.left-pad;
+        y: root.top;
+        width: root.text-w;
+        height: root.text-h;
+        text <=> root.text;
+        single-line: false;
+        wrap: word-wrap;
+        font-family: root.b.font;
+        font-size: root.fsize;
+        font-weight: root.b.bold ? 700 : 500;
+        color: root.editing ? (root.pic ? Theme.muted : Theme.text) : transparent;
+        horizontal-alignment: root.b.align == "center" ? center : root.b.align == "right" ? right : left;
+        selection-background-color: Theme.light ? #08788840 : #3df0ff40;
+        selection-foreground-color: Theme.text;
+        edited => { Studio.block-edited(root.index, self.text); }
+        changed has-focus => {
+            if self.has-focus { Studio.block-focus(root.index); } else { Studio.block-blur(root.index); }
+        }
+        cursor-position-changed(pos) => {
+            Studio.block-sel(root.index, self.anchor-position-byte-offset, self.cursor-position-byte-offset);
+            root.caret(root.y + self.y + pos.y);
+        }
+        key-pressed(event) => {
+            if (event.modifiers.control || event.modifiers.meta) {
+                if event.text == "z" || event.text == "\u{1a}" { if event.modifiers.shift { Studio.redo(); } else { Studio.undo(); } return accept; }
+                if event.text == "Z" { Studio.redo(); return accept; }
+                if event.text == "y" || event.text == "\u{19}" { Studio.redo(); return accept; }
+                if event.text == "b" || event.text == "\u{2}" { Studio.format("**"); return accept; }
+                if event.text == "i" || event.text == "\u{9}" { Studio.format("*"); return accept; }
+                if event.text == "u" || event.text == "\u{15}" { Studio.format("__"); return accept; }
+            }
+            if event.text == Key.Return && !event.modifiers.shift {
+                Studio.split-block(root.index, self.cursor-position-byte-offset);
+                return accept;
+            }
+            if event.text == Key.Backspace && self.cursor-position-byte-offset == 0 && self.anchor-position-byte-offset == 0 {
+                if Studio.merge-up(root.index) { return accept; }
+            }
+            if event.text == Key.UpArrow && !event.modifiers.shift {
+                if Studio.step-focus(root.index, -1, self.cursor-position-byte-offset) { return accept; }
+            }
+            if event.text == Key.DownArrow && !event.modifiers.shift {
+                if Studio.step-focus(root.index, 1, self.cursor-position-byte-offset) { return accept; }
+            }
+            reject
+        }
+    }
+    if root.quote: Rectangle {
+        x: root.left-pad;
+        y: root.top + root.text-h + 6px;
+        width: root.text-w;
+        height: 26px;
+        Text {
+            x: 0; width: 18px; height: 100%;
+            text: "—"; color: Theme.cyan; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; vertical-alignment: center;
+        }
+        ref-input := TextInput {
+            x: 18px;
+            width: parent.width - 18px;
+            height: 100%;
+            text <=> root.extra;
+            font-family: "Rajdhani";
+            font-weight: 700;
+            font-size: 15px;
+            color: Theme.cyan;
+            vertical-alignment: center;
+            selection-background-color: Theme.light ? #08788840 : #3df0ff40;
+            edited => { Studio.block-extra(root.index, self.text); }
+            changed has-focus => { if self.has-focus { Studio.block-focus(root.index); } }
+        }
+        if ref-input.text == "": Text {
+            x: 18px; height: 100%;
+            text: "Reference";
+            font-family: "Rajdhani"; font-size: 15px; color: Theme.muted.with-alpha(0.55); vertical-alignment: center;
+        }
+    }
+    // current-block indicator in the gutter
+    Rectangle {
+        x: -10px;
+        y: 0;
+        width: 3px;
+        height: parent.height;
+        visible: Studio.current == root.index;
+        background: Theme.cyan.with-alpha(0.6);
+    }
+}
+
+component DeskMenuItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> active;
+    in property <string> family: "Rajdhani";
+    callback clicked();
+    height: 28px;
+    background: mtouch.has-hover ? Theme.hover : transparent;
+    Text {
+        x: 10px;
+        text: root.label;
+        font-family: root.family;
+        font-weight: 600;
+        font-size: 15px;
+        color: root.active ? Theme.cyan : Theme.text;
+        vertical-alignment: center;
+        height: 100%;
+    }
+    mtouch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
+component DeskVerseRow inherits Rectangle {
+    in property <DeskVerse> v;
+    in property <bool> removable: false;
+    callback clicked();
+    height: vcol.preferred-height;
+    border-width: 1px;
+    border-color: root.v.selected && !root.removable ? Theme.cyan : vtouch.has-hover ? Theme.line : Theme.line-soft;
+    background: root.v.selected && !root.removable ? Theme.hover : Theme.panel;
+    vtouch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+    vcol := HorizontalLayout {
+        padding: 6px;
+        spacing: 6px;
+        Rectangle {
+            width: 16px;
+            height: 16px;
+            y: 2px;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            background: root.v.selected && !root.removable ? Theme.cyan : transparent;
+            Text {
+                text: root.removable ? "×" : root.v.selected ? "✓" : "";
+                color: root.removable ? Theme.cyan : Theme.bg;
+                font-size: 12px;
+                font-weight: 700;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        VerticalLayout {
+            spacing: 1px;
+            Text { text: root.v.reference; font-family: "Rajdhani"; font-weight: 700; font-size: 14px; color: Theme.cyan; overflow: elide; }
+            Text { text: root.v.text; wrap: word-wrap; font-family: "Rajdhani"; font-weight: 500; font-size: 14px; color: Theme.text; }
+        }
+    }
+}
+
+component ScripturePanel inherits Rectangle {
+    background: Theme.panel;
+    VerticalLayout {
+        padding: 10px;
+        spacing: 8px;
+        HorizontalLayout {
+            spacing: 6px;
+            Kicker { text: "SCRIPTURE"; vertical-alignment: center; horizontal-stretch: 1; }
+            Rectangle { width: 30px; DeskBtn { label: "»"; clicked => { Studio.panel-open = false; } } }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            DeskBtn { label: "PASSAGE"; active: Studio.panel-mode == "passage"; clicked => { Studio.panel-mode = "passage"; } }
+            DeskBtn { label: "SEARCH"; active: Studio.panel-mode == "search"; clicked => { Studio.panel-mode = "search"; } }
+        }
+        Flickable {
+            height: 26px;
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: start;
+                for chip in Studio.versions: Rectangle {
+                    width: max(chip-label.preferred-width + 12px, 44px);
+                    height: 24px;
+                    border-width: 1px;
+                    border-color: chip.active ? Theme.cyan : Theme.line-soft;
+                    background: chip.active ? Theme.hover : transparent;
+                    chip-label := Text { text: chip.label; font-family: "Rajdhani"; font-weight: 700; font-size: 12px; color: chip.active ? Theme.cyan : Theme.muted; horizontal-alignment: center; vertical-alignment: center; }
+                    TouchArea { mouse-cursor: pointer; clicked => { Studio.set-panel-version(chip.id); } }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            qf := Field {
+                horizontal-stretch: 1;
+                placeholder: Studio.panel-mode == "search" ? "Word or phrase, e.g. living water" : "John 3:16-18";
+                text <=> Studio.panel-query;
+                accepted(value) => { Studio.lookup(value); }
+            }
+            Rectangle { width: 46px; Btn { label: "GO"; active: true; clicked => { Studio.lookup(Studio.panel-query); } } }
+        }
+        Text { text: Studio.panel-summary; wrap: word-wrap; font-family: "Share Tech Mono"; font-size: 11px; letter-spacing: 0.6px; color: Theme.muted; }
+        Flickable {
+            vertical-stretch: 3;
+            min-height: 80px;
+            VerticalLayout {
+                width: parent.width;
+                spacing: 4px;
+                alignment: start;
+                for v[i] in Studio.results: DeskVerseRow { v: v; clicked => { Studio.toggle-verse(i); } }
+            }
+        }
+        Rectangle { height: 1px; background: Theme.line; }
+        HorizontalLayout {
+            Kicker { text: "SELECTED · " + Studio.picked.length; horizontal-stretch: 1; vertical-alignment: center; }
+            if Studio.picked.length > 0: Rectangle { width: 64px; DeskBtn { label: "CLEAR"; clicked => { Studio.clear-picked(); } } }
+        }
+        if Studio.picked-ref != "": Text { text: Studio.picked-ref; wrap: word-wrap; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; color: Theme.amber; }
+        Flickable {
+            vertical-stretch: 2;
+            min-height: 60px;
+            VerticalLayout {
+                width: parent.width;
+                spacing: 4px;
+                alignment: start;
+                for v[i] in Studio.picked: DeskVerseRow { v: v; removable: true; clicked => { Studio.unpick(i); } }
+            }
+        }
+        Btn { label: "INSERT INTO SERMON"; active: Studio.picked.length > 0; clicked => { Studio.insert-picked(); } }
+    }
+    Rectangle { x: 0; width: 1px; background: Theme.line; }
+}
+
+component DeskDocList inherits Rectangle {
+    in property <[DeskDoc]> docs;
+    in property <string> heading;
+    in property <string> empty-text;
+    callback create();
+    callback pick(string);
+    background: Theme.panel;
+    VerticalLayout {
+        padding: 10px;
+        spacing: 6px;
+        Kicker { text: root.heading; }
+        Btn { label: "+ NEW"; active: true; clicked => { root.create(); } }
+        if root.docs.length == 0: Text { text: root.empty-text; wrap: word-wrap; font-family: "Rajdhani"; font-weight: 600; font-size: 14px; color: Theme.muted; }
+        Flickable {
+            vertical-stretch: 1;
+            VerticalLayout {
+                width: parent.width;
+                spacing: 4px;
+                alignment: start;
+                for d in root.docs: Rectangle {
+                    height: dcol.preferred-height;
+                    border-width: 1px;
+                    border-color: d.current ? Theme.cyan : Theme.line-soft;
+                    background: d.current || ltouch.has-hover ? Theme.hover : transparent;
+                    dcol := VerticalLayout {
+                        padding: 7px;
+                        spacing: 1px;
+                        Text { text: d.title; font-family: "Rajdhani"; font-weight: 700; font-size: 15px; color: d.current ? Theme.cyan : Theme.text; overflow: elide; }
+                        Text { text: d.updated; font-family: "Share Tech Mono"; font-size: 10px; color: Theme.muted; overflow: elide; }
+                    }
+                    ltouch := TouchArea { mouse-cursor: pointer; clicked => { root.pick(d.id); } }
+                }
+            }
+        }
+    }
+    Rectangle { x: parent.width - 1px; width: 1px; background: Theme.line; }
+}
+
+component SermonView inherits Rectangle {
+    private property <length> list-w: root.list-shown ? max(140px, min(220px, root.width * 0.17)) : 0px;
+    private property <length> panel-w: Studio.panel-open ? max(250px, min(360px, root.width * 0.3)) : 30px;
+    private property <int> scroll-watch: Studio.scroll-tick;
+    private property <length> menu-x: 0px;
+    private property <length> menu-y: 0px;
+    // The editor column gets a third toolbar row when it is narrow.
+    private property <bool> compact: root.width - root.list-w - root.panel-w < 580px;
+    // In a narrow or tiled window the sermon list stays folded away unless ☰ opens it.
+    private property <bool> wide: root.width >= 980px;
+    private property <bool> list-forced: false;
+    private property <bool> list-shown: root.wide ? Studio.list-open : root.list-forced;
+    changed scroll-watch => {
+        if Studio.scroll-to >= 0 {
+            doc-flick.content-y = max(min(0px, doc-flick.height - doc-col.preferred-height), -max(0px, Studio.scroll-to - 40px));
+        }
+    }
+    HorizontalLayout {
+        if root.list-shown: DeskDocList {
+            width: root.list-w;
+            heading: "SERMONS";
+            empty-text: "No sermons yet.";
+            docs: Studio.sermons;
+            create => { Studio.new-sermon(); }
+            pick(id) => { Studio.open-sermon(id); }
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            min-width: 260px;
+            padding: 10px;
+            spacing: 6px;
+            HorizontalLayout {
+                spacing: 6px;
+                Rectangle { width: 30px; DeskBtn { label: root.list-shown ? "«" : "☰"; clicked => { if root.wide { Studio.list-open = !Studio.list-open; } else { root.list-forced = !root.list-forced; } } } }
+                title-field := Field {
+                    horizontal-stretch: 1;
+                    placeholder: "Sermon title";
+                    text <=> Studio.doc-title;
+                    accepted(value) => { Studio.rename-sermon(value); }
+                    changed text => { if self.text != Studio.doc-title { Studio.rename-sermon(self.text); } }
+                }
+                Rectangle { width: 70px; DangerBtn { label: "DELETE"; clicked => { Studio.ask-delete-sermon(); } } }
+            }
+            // Toolbar. Two rows, or three when the editor column is narrow (tiled window).
+            HorizontalLayout {
+                spacing: 4px;
+                kind-btn := DeskBtn {
+                    horizontal-stretch: 3;
+                    label: (Studio.cur-kind == "p" ? "PARAGRAPH" : Studio.cur-kind == "h1" ? "HEADING 1" : Studio.cur-kind == "h2" ? "HEADING 2" : Studio.cur-kind == "h3" ? "HEADING 3" : Studio.cur-kind == "bullet" ? "BULLETS" : Studio.cur-kind == "number" ? "NUMBERED" : Studio.cur-kind == "quote" ? "QUOTE" : Studio.cur-kind == "slide" ? "SLIDE" : "IMAGE") + " ▾";
+                    clicked => { kind-menu.show(); }
+                }
+                font-btn := DeskBtn {
+                    horizontal-stretch: 3;
+                    family: Studio.fam(Studio.cur-font);
+                    label: Studio.cur-font + " ▾";
+                    clicked => { font-menu.show(); }
+                }
+                DeskBtn { label: "−"; clicked => { Studio.bump-size(-1); } }
+                Rectangle {
+                    width: 28px;
+                    Text { text: Studio.cur-size; font-family: "Share Tech Mono"; font-size: 13px; color: Theme.text; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                DeskBtn { label: "+"; clicked => { Studio.bump-size(1); } }
+                if !root.compact: Rectangle { width: 4px; }
+                if !root.compact: DeskBtn { label: "B"; clicked => { Studio.format("**"); } }
+                if !root.compact: DeskBtn { label: "I"; italic: true; clicked => { Studio.format("*"); } }
+                if !root.compact: DeskBtn { label: "U"; underline: true; clicked => { Studio.format("__"); } }
+            }
+            HorizontalLayout {
+                spacing: 4px;
+                if root.compact: DeskBtn { label: "B"; clicked => { Studio.format("**"); } }
+                if root.compact: DeskBtn { label: "I"; italic: true; clicked => { Studio.format("*"); } }
+                if root.compact: DeskBtn { label: "U"; underline: true; clicked => { Studio.format("__"); } }
+                if root.compact: Rectangle { width: 4px; }
+                DeskBtn { label: root.compact ? "L" : "LEFT"; active: Studio.cur-align == "left"; clicked => { Studio.set-align("left"); } }
+                DeskBtn { label: root.compact ? "C" : "CENTER"; active: Studio.cur-align == "center"; clicked => { Studio.set-align("center"); } }
+                DeskBtn { label: root.compact ? "R" : "RIGHT"; active: Studio.cur-align == "right"; clicked => { Studio.set-align("right"); } }
+                Rectangle { width: 4px; }
+                DeskBtn { label: "UNDO"; enabled: Studio.can-undo; clicked => { Studio.undo(); } }
+                DeskBtn { label: "REDO"; enabled: Studio.can-redo; clicked => { Studio.redo(); } }
+                if !root.compact: Rectangle { width: 4px; }
+                if !root.compact: DeskBtn { label: "+IMAGE"; clicked => { Studio.add-block("image"); } }
+                if !root.compact: DeskBtn { label: "+SLIDE"; clicked => { Studio.add-block("slide"); } }
+                if !root.compact: DeskBtn { label: "↑"; clicked => { Studio.move-block(-1); } }
+                if !root.compact: DeskBtn { label: "↓"; clicked => { Studio.move-block(1); } }
+                if !root.compact: DeskBtn { label: "✕"; clicked => { Studio.delete-block(); } }
+                if !root.compact: Rectangle { width: 4px; }
+                if !root.compact: DeskBtn {
+                    label: "EXPORT ▾";
+                    horizontal-stretch: 2;
+                    clicked => {
+                        root.menu-x = self.absolute-position.x - root.absolute-position.x + self.width - 200px;
+                        root.menu-y = self.absolute-position.y - root.absolute-position.y + 30px;
+                        export-menu.show();
+                    }
+                }
+            }
+            if root.compact: HorizontalLayout {
+                spacing: 4px;
+                DeskBtn { label: "+IMAGE"; clicked => { Studio.add-block("image"); } }
+                DeskBtn { label: "+SLIDE"; clicked => { Studio.add-block("slide"); } }
+                DeskBtn { label: "↑"; clicked => { Studio.move-block(-1); } }
+                DeskBtn { label: "↓"; clicked => { Studio.move-block(1); } }
+                DeskBtn { label: "✕"; clicked => { Studio.delete-block(); } }
+                DeskBtn {
+                    label: "EXPORT ▾";
+                    horizontal-stretch: 2;
+                    clicked => {
+                        root.menu-x = self.absolute-position.x - root.absolute-position.x + self.width - 200px;
+                        root.menu-y = self.absolute-position.y - root.absolute-position.y + 30px;
+                        export-menu.show();
+                    }
+                }
+            }
+            Rectangle {
+                vertical-stretch: 1;
+                background: Theme.input;
+                border-width: 1px;
+                border-color: Theme.line-soft;
+                clip: true;
+                doc-flick := Flickable {
+                    mouse-drag-pan-enabled: false;
+                    content-height: doc-col.preferred-height;
+                    doc-col := VerticalLayout {
+                        width: doc-flick.width;
+                        padding-left: 28px;
+                        padding-right: 24px;
+                        padding-top: 18px;
+                        padding-bottom: 120px;
+                        spacing: 8px;
+                        alignment: start;
+                        for blk[i] in Studio.blocks: DeskBlockView {
+                            b: blk;
+                            index: i;
+                            text <=> blk.text;
+                            extra <=> blk.extra;
+                            caret(y) => {
+                                if y + 18px + doc-flick.content-y > doc-flick.height - 40px {
+                                    doc-flick.content-y = max(doc-flick.height - doc-col.preferred-height, -(y + 18px - doc-flick.height + 60px));
+                                } else if y + 18px + doc-flick.content-y < 10px {
+                                    doc-flick.content-y = min(0px, -(y + 18px) + 20px);
+                                }
+                            }
+                        }
+                    }
+                }
+                // a click below the last block puts the caret at the end of the document
+                Rectangle {
+                    y: min(parent.height, doc-col.preferred-height - 120px + doc-flick.content-y);
+                    height: max(0px, parent.height - self.y);
+                    TouchArea { mouse-cursor: text; clicked => { Studio.step-focus(Studio.blocks.length, -1, 0); } }
+                }
+                // scroll indicator
+                if doc-col.preferred-height > doc-flick.height: Rectangle {
+                    x: parent.width - 5px;
+                    width: 3px;
+                    height: max(24px, parent.height * doc-flick.height / doc-col.preferred-height);
+                    y: (parent.height - self.height) * (-doc-flick.content-y) / max(1px, doc-col.preferred-height - doc-flick.height);
+                    background: Theme.cyan.with-alpha(0.5);
+                }
+            }
+            HorizontalLayout {
+                Kicker { text: Studio.save-state; horizontal-stretch: 1; overflow: elide; }
+                Kicker { text: "ENTER new block · SHIFT+ENTER new line · CTRL+B/I/U · CTRL+Z/Y"; overflow: elide; horizontal-alignment: right; horizontal-stretch: 1; }
+            }
+        }
+        if Studio.panel-open: ScripturePanel { width: root.panel-w; }
+        if !Studio.panel-open: Rectangle {
+            width: 30px;
+            background: ptouch.has-hover ? Theme.hover : Theme.panel;
+            Rectangle { x: 0; width: 1px; background: Theme.line; }
+            Text {
+                y: 12px;
+                width: 100%;
+                text: "«";
+                color: Theme.cyan;
+                font-size: 16px;
+                horizontal-alignment: center;
+            }
+            VerticalLayout {
+                y: 40px;
+                width: 100%;
+                height: 200px;
+                alignment: start;
+                for ch in ["S", "C", "R", "I", "P", "T", "U", "R", "E"]: Text {
+                    text: ch;
+                    font-family: "Share Tech Mono";
+                    font-size: 12px;
+                    color: Theme.cyan;
+                    horizontal-alignment: center;
+                }
+            }
+            ptouch := TouchArea { mouse-cursor: pointer; clicked => { Studio.panel-open = true; } }
+        }
+    }
+    kind-menu := PopupWindow {
+        x: kind-btn.absolute-position.x - root.absolute-position.x;
+        y: kind-btn.absolute-position.y - root.absolute-position.y + 30px;
+        width: 170px;
+        Rectangle {
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            VerticalLayout {
+                padding: 4px;
+                for k[i] in ["p", "h1", "h2", "h3", "bullet", "number", "quote", "slide"]: DeskMenuItem {
+                    label: ["Paragraph", "Heading 1", "Heading 2", "Heading 3", "Bulleted list", "Numbered list", "Quote", "Slide"][i];
+                    active: Studio.cur-kind == k;
+                    clicked => { Studio.set-kind(k); kind-menu.close(); }
+                }
+            }
+        }
+    }
+    font-menu := PopupWindow {
+        x: font-btn.absolute-position.x - root.absolute-position.x;
+        y: font-btn.absolute-position.y - root.absolute-position.y + 30px;
+        width: 190px;
+        Rectangle {
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            VerticalLayout {
+                padding: 4px;
+                for f in ["Rajdhani", "Serif", "Sans", "Share Tech Mono", "Orbitron"]: DeskMenuItem {
+                    label: f;
+                    family: Studio.fam(f);
+                    active: Studio.cur-font == f;
+                    clicked => { Studio.set-font(f); font-menu.close(); }
+                }
+            }
+        }
+    }
+    export-menu := PopupWindow {
+        x: max(0px, root.menu-x);
+        y: root.menu-y;
+        width: 200px;
+        Rectangle {
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.cyan;
+            VerticalLayout {
+                padding: 4px;
+                DeskMenuItem { label: "Web page (.html)"; clicked => { Studio.export("html"); export-menu.close(); } }
+                DeskMenuItem { label: "Markdown (.md)"; clicked => { Studio.export("md"); export-menu.close(); } }
+            }
+        }
+    }
+}
+
+component NotesView inherits Rectangle {
+    private property <length> list-w: max(160px, min(260px, root.width * 0.24));
+    HorizontalLayout {
+        DeskDocList {
+            width: root.list-w;
+            heading: "NOTES";
+            empty-text: "No notes yet. Make one with + NEW.";
+            docs: Studio.notes;
+            create => { Studio.new-note(); }
+            pick(id) => { Studio.open-note(id); }
+        }
+        if Studio.note-id == "": VerticalLayout {
+            horizontal-stretch: 1;
+            padding: 30px;
+            spacing: 10px;
+            alignment: start;
+            Kicker { text: "NOTES"; }
+            Text { text: "Quick thoughts, prayer points, ideas for later. Everything saves as you type."; wrap: word-wrap; font-family: "Rajdhani"; font-weight: 600; font-size: 17px; color: Theme.muted; }
+            HorizontalLayout { alignment: start; Rectangle { width: 160px; Btn { label: "+ NEW NOTE"; active: true; clicked => { Studio.new-note(); } } } }
+        }
+        if Studio.note-id != "": VerticalLayout {
+            horizontal-stretch: 1;
+            min-width: 260px;
+            padding: 12px;
+            spacing: 8px;
+            HorizontalLayout {
+                spacing: 6px;
+                note-title-field := Field {
+                    private property <int> ttick: Studio.note-title-tick;
+                    changed ttick => { self.focus-input(); self.select-all-input(); }
+                    horizontal-stretch: 1;
+                    placeholder: "Title";
+                    text <=> Studio.note-title;
+                    changed text => { Studio.note-edited(self.text, Studio.note-body); }
+                }
+                Rectangle { width: 70px; DangerBtn { label: "DELETE"; clicked => { Studio.ask-delete-note(); } } }
+            }
+            Rectangle {
+                vertical-stretch: 1;
+                background: Theme.input;
+                border-width: 1px;
+                border-color: Theme.line;
+                clip: true;
+                note-flick := Flickable {
+                    mouse-drag-pan-enabled: false;
+                    content-height: max(self.height, note-input.preferred-height + 40px);
+                    note-input := TextInput {
+                        private property <int> tick: Studio.note-tick;
+                        changed tick => { self.focus(); }
+                        init => { self.focus(); }
+                        x: 16px;
+                        y: 14px;
+                        width: note-flick.width - 32px;
+                        height: max(note-flick.height - 28px, self.preferred-height);
+                        text <=> Studio.note-body;
+                        single-line: false;
+                        wrap: word-wrap;
+                        font-family: "Rajdhani";
+                        font-weight: 500;
+                        font-size: 18px;
+                        color: Theme.text;
+                        selection-background-color: Theme.light ? #08788840 : #3df0ff40;
+                        selection-foreground-color: Theme.text;
+                        edited => { Studio.note-edited(Studio.note-title, self.text); }
+                        cursor-position-changed(pos) => {
+                            if pos.y + 14px + note-flick.content-y > note-flick.height - 40px {
+                                note-flick.content-y = -(pos.y + 14px - note-flick.height + 60px);
+                            } else if pos.y + 14px + note-flick.content-y < 0px {
+                                note-flick.content-y = min(0px, -(pos.y + 14px) + 20px);
+                            }
+                        }
+                    }
+                }
+            }
+            Kicker { text: Studio.note-state; }
+        }
+    }
+}
+
+component StudyDeskCard inherits Rectangle {
+    background: Theme.panel;
+    border-width: 1px;
+    border-color: Theme.line;
+    height: 190px;
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+        Kicker { text: "STUDY DESK"; }
+        Text {
+            text: "Study Desk";
+            font-family: "Rajdhani";
+            font-weight: 700;
+            font-size: 20px;
+            color: Theme.text;
+        }
+        Rectangle { vertical-stretch: 1; }
+        Btn { label: "SERMON PREP"; active: true; clicked => { Session.commit-note(); Studio.open-sermons(); } }
+        Btn { label: "NOTES"; clicked => { Session.commit-note(); Studio.open-notes(); } }
+    }
+}
+
 component HomeView inherits Flickable {
     VerticalLayout {
         width: parent.width;
@@ -1446,7 +2294,7 @@ component HomeView inherits Flickable {
                     Btn { label: "GO"; active: true; clicked => { Session.search-passage(jump-field.text); } }
                 }
             }
-            Rectangle {
+            lib-box := Rectangle {
                 height: 250px;
                 horizontal-stretch: 1;
                 background: Theme.panel;
@@ -1474,7 +2322,9 @@ component HomeView inherits Flickable {
         HorizontalLayout {
             spacing: 14px;
             PrayerCard { horizontal-stretch: 2; }
-            Rectangle { horizontal-stretch: 3; }
+            Rectangle { horizontal-stretch: 1; }
+            // Study Desk sits directly under the LIBRARY box (same column, same width).
+            StudyDeskCard { width: lib-box.width; }
         }
     }
 }
@@ -2087,7 +2937,7 @@ export component AppWindow inherits Window {
     private property <bool> narrow: false;
     changed width => { self.narrow = self.width < 900px; }
     init => { self.narrow = self.width < 900px; }
-    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open;
+    private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open || Studio.confirm-open;
     private property <int> focus-watch: Session.focus-request;
     private property <string> view-watch: Session.view;
     changed any-popup => { root-fs.focus(); }
@@ -2100,7 +2950,8 @@ export component AppWindow inherits Window {
         init => { self.focus(); }
         capture-key-pressed(event) => {
             if event.text == Key.Escape {
-                if Outreach.confirm-open { Outreach.confirm-open = false; }
+                if Studio.confirm-open { Studio.confirm-open = false; }
+                else if Outreach.confirm-open { Outreach.confirm-open = false; }
                 else if Outreach.event-open { Outreach.event-open = false; }
                 else if Outreach.card-open { Outreach.card-open = false; }
                 else if Session.popup-open { Session.popup-open = false; }
@@ -2117,7 +2968,7 @@ export component AppWindow inherits Window {
                 Session.reading-mode = !Session.reading-mode;
                 return accept;
             }
-            if event.modifiers.control || event.modifiers.meta {
+            if (event.modifiers.control || event.modifiers.meta) && Session.view != "sermon" && Session.view != "notes" {
                 if event.text == "f" || event.text == "\u{6}" { Session.commit-note(); Session.view = "search"; return accept; }
                 if event.text == "g" || event.text == "\u{7}" { Session.ref-popup = true; return accept; }
                 if event.text == "b" || event.text == "\u{2}" { Session.toggle-bookmark(); return accept; }
@@ -2228,6 +3079,18 @@ export component AppWindow inherits Window {
             Btn { label: "SAVE"; active: true; clicked => { Outreach.save-event(); } }
             if Outreach.e-id >= 0: DangerBtn { label: "DELETE"; clicked => { Outreach.ask-delete-event(); } }
             Btn { label: "CANCEL"; clicked => { Outreach.event-open = false; } }
+        }
+    }
+    if Studio.confirm-open: PopupFrame {
+        box-width: 420px;
+        z: 20;
+        dismiss => { Studio.confirm-open = false; }
+        Kicker { text: "CONFIRM DELETE"; }
+        Text { text: Studio.confirm-text; wrap: word-wrap; color: Theme.text; font-family: "Rajdhani"; font-weight: 600; font-size: 16px; }
+        HorizontalLayout {
+            spacing: 8px;
+            DangerBtn { label: "YES, DELETE"; clicked => { Studio.confirm-yes(); } }
+            Btn { label: "KEEP IT"; active: true; clicked => { Studio.confirm-open = false; } }
         }
     }
     if Outreach.confirm-open: PopupFrame {
@@ -2504,6 +3367,8 @@ export component AppWindow inherits Window {
             if Session.view == "bookmarks": BookmarksView { width: 100%; height: 100%; }
             if Session.view == "options": OptionsView { width: 100%; height: 100%; }
             if Session.view == "outreach": OutreachView { width: 100%; height: 100%; }
+            if Session.view == "sermon": SermonView { width: 100%; height: 100%; }
+            if Session.view == "notes": NotesView { width: 100%; height: 100%; }
         }
         if !Session.reading-mode: Rectangle {
             height: 28px;
