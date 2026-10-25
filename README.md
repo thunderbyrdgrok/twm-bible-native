@@ -4,7 +4,7 @@ Native desktop reader for the TWM Bible texts. It is a Rust and Slint applicatio
 
 ## What's new
 
-See [CHANGELOG.md](CHANGELOG.md). Version 1.2.0 adds Outreach (a planner, contacts with photos, and a daily prayer card), a loading animation, and popup and layout fixes. Version 1.1.0 added side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
+See [CHANGELOG.md](CHANGELOG.md). Version 1.3.0 adds the Study Desk (sermon prep and notes) and Share (verse picture cards). Version 1.2.0 adds Outreach (a planner, contacts with photos, and a daily prayer card), a loading animation, and popup and layout fixes. Version 1.1.0 added side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
 
 ## Install
 
@@ -21,7 +21,7 @@ Download the file for your system from the GitHub Releases page.
 - Windows: `cargo build --release`, then `makensis packaging\windows\installer.nsi`
 - macOS: `./packaging/macos/build-dmg.sh`
 
-Pushing a tag such as `v1.2.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
+Pushing a tag such as `v1.3.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
 
 ## Run from source
 
