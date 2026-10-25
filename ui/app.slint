@@ -2935,8 +2935,9 @@ export component AppWindow inherits Window {
     // Under 900px (a tiled window) the logo, clock and theme buttons give way to the tabs.
     // Set from `changed width` (not a binding) so the window width and the nav layout cannot form a binding loop.
     private property <bool> narrow: false;
-    changed width => { self.narrow = self.width < 900px; }
-    init => { self.narrow = self.width < 900px; }
+    private property <bool> nav-compact: false;
+    changed width => { self.narrow = self.width < 900px; self.nav-compact = self.width < 1120px; }
+    init => { self.narrow = self.width < 900px; self.nav-compact = self.width < 1120px; }
     private property <bool> any-popup: Session.popup-open || Session.ref-popup || Session.chapter-popup || Session.export-popup || Session.import-popup || Outreach.card-open || Outreach.event-open || Outreach.confirm-open || Studio.confirm-open;
     private property <int> focus-watch: Session.focus-request;
     private property <string> view-watch: Session.view;
@@ -3317,18 +3318,36 @@ export component AppWindow inherits Window {
                     }
                 }
                 Rectangle { horizontal-stretch: 1; }
-                Rectangle { width: 76px; Btn { label: "HOME"; active: Session.view == "home"; clicked => { Session.commit-note(); Session.view = "home"; } } }
-                Rectangle { width: 76px; Btn { label: "READ"; active: Session.view == "read"; clicked => { Session.commit-note(); Session.view = "read"; } } }
-                Rectangle { width: 108px; Btn { label: "BOOKMARKS"; active: Session.view == "bookmarks"; clicked => { Session.commit-note(); Session.view = "bookmarks"; } } }
-                Rectangle { width: 90px; Btn { label: "SEARCH"; active: Session.view == "search"; clicked => { Session.commit-note(); Session.view = "search"; } } }
-                Rectangle { width: 98px; Btn { label: "OUTREACH"; active: Session.view == "outreach"; clicked => { Session.commit-note(); Outreach.open(); } } }
-                Rectangle { width: 94px; Btn { label: "OPTIONS"; active: Session.view == "options"; clicked => { Session.commit-note(); Session.view = "options"; } } }
-                if !root.narrow: Rectangle {
+                Rectangle { width: root.nav-compact ? 62px : 76px; Btn { label: "HOME"; active: Session.view == "home"; clicked => { Session.commit-note(); Session.view = "home"; } } }
+                Rectangle { width: root.nav-compact ? 58px : 76px; Btn { label: "READ"; active: Session.view == "read"; clicked => { Session.commit-note(); Session.view = "read"; } } }
+                Rectangle { width: root.nav-compact ? 96px : 108px; Btn { label: "BOOKMARKS"; active: Session.view == "bookmarks"; clicked => { Session.commit-note(); Session.view = "bookmarks"; } } }
+                Rectangle { width: root.nav-compact ? 72px : 90px; Btn { label: "SEARCH"; active: Session.view == "search"; clicked => { Session.commit-note(); Session.view = "search"; } } }
+                desk-nav := Rectangle { width: root.nav-compact ? 104px : 122px; Btn { label: "STUDY DESK"; active: Session.view == "sermon" || Session.view == "notes"; clicked => { Session.commit-note(); desk-nav-menu.show(); } }
+                    desk-nav-menu := PopupWindow {
+                        x: 0px;
+                        y: (parent.height + 32px) / 2 + 4px;
+                        width: max(parent.width, 150px);
+                        close-policy: close-on-click-outside;
+                        Rectangle {
+                            background: Theme.panel;
+                            border-width: 1px;
+                            border-color: Theme.cyan;
+                            VerticalLayout {
+                                padding: 4px;
+                                DeskMenuItem { label: "Sermon prep"; active: Session.view == "sermon"; clicked => { desk-nav-menu.close(); Studio.open-sermons(); } }
+                                DeskMenuItem { label: "Notes"; active: Session.view == "notes"; clicked => { desk-nav-menu.close(); Studio.open-notes(); } }
+                            }
+                        }
+                    }
+                }
+                Rectangle { width: root.nav-compact ? 86px : 98px; Btn { label: "OUTREACH"; active: Session.view == "outreach"; clicked => { Session.commit-note(); Outreach.open(); } } }
+                Rectangle { width: root.nav-compact ? 78px : 94px; Btn { label: "OPTIONS"; active: Session.view == "options"; clicked => { Session.commit-note(); Session.view = "options"; } } }
+                if !root.nav-compact: Rectangle {
                     width: 1px;
                     height: 28px;
                     background: Theme.line;
                 }
-                if !root.narrow: Rectangle {
+                if !root.nav-compact: Rectangle {
                     width: 180px;
                     Text {
                         x: 0px;
@@ -3390,4 +3409,5 @@ export component AppWindow inherits Window {
         }
     }
     }
+
 }

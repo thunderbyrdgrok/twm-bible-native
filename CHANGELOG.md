@@ -6,6 +6,7 @@
 - Sermon prep: block editor (headings, lists, quotes, images, slide markers, fonts, sizes, alignment, inline bold/italic/underline, undo/redo), autosave, multiple sermons, HTML/Markdown export.
 - Scripture side panel: passage lookup and word search with insert-as-quote.
 - Notes page.
+- Top bar: STUDY DESK button (between SEARCH and OUTREACH) with a Sermon prep / Notes dropdown; nav buttons compact below 1120 px wide (clock hidden) so it fits at 720x560.
 - See docs/STUDY-DESK.md.
 
 ## 1.2.0
