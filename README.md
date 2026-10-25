@@ -2,16 +2,43 @@
 
 Native desktop reader for the TWM Bible texts. It is a Rust and Slint application. The Chromium edition, TWM Bible App, stays installed beside it and keeps its own notes.
 
-## What's new
+## What's new in 1.3.0
 
-See [CHANGELOG.md](CHANGELOG.md). Version 1.3.0 adds the Study Desk (sermon prep and notes) and Share (verse picture cards). Version 1.2.0 adds Outreach (a planner, contacts with photos, and a daily prayer card), a loading animation, and popup and layout fixes. Version 1.1.0 added side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
+### Study Desk
+
+A quiet place to prepare sermons and keep study notes. Open it from the **Study Desk** card on Home (under Library) or from the **STUDY DESK** button in the top bar, which has a Sermon prep / Notes dropdown.
+
+- **Sermon prep** is a block editor. Each paragraph, heading, bulleted or numbered item, quote, image, or slide marker is its own block. Every block can have its own font, size, and alignment.
+- Select text and press **B**, **I**, or **U** (or Ctrl+B / Ctrl+I / Ctrl+U) for **bold**, *italic*, and underline. The text keeps light markup (`**bold**`, `*italic*`, `__underline__`) and shows it styled when you leave the block.
+- **Undo and redo** (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z), up to 200 steps.
+- **Images** and numbered **slide markers** show where the projected slide changes.
+- **Autosave** keeps your work as you type and when you close the window. Keep as many sermons as you like.
+- **Export** a sermon as a web page (.html, images included) or as Markdown (.md).
+- **Scripture side panel**: look up a passage such as `John 3:16-18` or `Ps 23`, or search for a word. Check the verses you want and press **INSERT INTO SERMON** to add them as a quote with the reference, for example `John 3:16-18 (KJV)`.
+- **Notes**: a simple list of titled study notes, saved automatically.
+- **Scrolling**: the mouse wheel scrolls whatever is under the pointer. Press Esc to leave a text field, then use Up/Down, PageUp/PageDown, Home and End to move through the page.
+
+More detail is in [docs/STUDY-DESK.md](docs/STUDY-DESK.md).
+
+### Share
+
+Make a picture of your favorite verses to send to a friend.
+
+1. Hold a word in a verse, then press **SHARE**.
+2. Check the verses you want on the card.
+3. Pick a background color from the swatches or type a hex color such as `#05080e`.
+4. **Copy picture**, **Save PNG**, or **Copy verse text**.
+
+### Earlier versions
+
+See [CHANGELOG.md](CHANGELOG.md). Version 1.2.0 added Outreach (a planner, contacts with photos, and a daily prayer card), a loading animation, and popup and layout fixes. Version 1.1.0 added side-by-side texts, bookmarks, backup and restore, PDF/HTML export, new themes, an intro video, and keyboard shortcuts.
 
 ## Install
 
-Download the file for your system from the GitHub Releases page.
+Download the file for your system from the GitHub Releases page. Each release also has a `SHA256SUMS.txt` so you can check your download.
 
 - **Debian / Ubuntu:** `sudo apt install ./twm-bible-native_<version>-1_amd64.deb`, then open **TWM Bible** from the app menu.
-- **Other Linux:** `chmod +x TWM_Bible-<version>-x86_64.AppImage` and run it. Or unpack the `linux-x86_64.tar.gz` and run `bin/twm-bible-native`.
+- **Other Linux:** `chmod +x TWM_Bible-<version>-x86_64.AppImage` and run it. Or unpack `twm-bible-native-<version>-linux-x86_64.tar.gz`, then run `./install.sh` inside it to install for your user (into `~/.local`, adds a menu entry), or `sudo ./install.sh /usr/local` for everyone. `./install.sh --uninstall` removes it. You can also just run `bin/twm-bible-native` without installing.
 - **Windows:** run `TWM-Bible-<version>-windows-x64-setup.exe`. It adds a Start Menu and desktop shortcut and an uninstaller. The installer is unsigned, so SmartScreen may ask you to confirm (More info → Run anyway). A portable zip is also provided.
 - **macOS (11+, Apple Silicon and Intel):** open the `.dmg` and drag **TWM Bible** to Applications. The app is not notarized, so the first time right-click it and choose **Open** (or run `xattr -dr com.apple.quarantine "/Applications/TWM Bible.app"`).
 
@@ -33,7 +60,7 @@ The launcher builds the release binary when the sources are newer, then starts i
 
 ## Reading
 
-Home, Read, Search, Outreach, and Options. The default text is the KJV 1611 in standard spelling. ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims are bundled and start turned off. KJV stays on.
+Home, Read, Search, Study Desk, Outreach, and Options. The default text is the KJV 1611 in standard spelling. ASV, WEB, Young’s Literal, Darby, Revised Version, Geneva 1599, and Douay-Rheims are bundled and start turned off. KJV stays on.
 
 A reference such as `John 3:16` opens that verse. Keyword search needs at least two letters and lists up to 500 verses. Click a verse to select it. Click its number to highlight it. A second click on the number does not clear the highlight. Remove does.
 
