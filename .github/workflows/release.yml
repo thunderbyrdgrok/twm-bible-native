@@ -80,8 +80,29 @@ jobs:
           name: macos
           path: dist/*.dmg
 
+  flatpak:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version
+        id: ver
+        run: echo "version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)" >> "$GITHUB_OUTPUT"
+      - uses: flathub-infra/flatpak-github-actions/flatpak-builder@master
+        with:
+          bundle: TWM-Bible-${{ steps.ver.outputs.version }}-x86_64.flatpak
+          manifest-path: packaging/flatpak/io.github.thunderbyrdgrok.TWMBible.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak
+          path: TWM-Bible-*.flatpak
+
   release:
-    needs: [linux, windows, macos]
+    needs: [linux, windows, macos, flatpak]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

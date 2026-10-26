@@ -39,8 +39,25 @@ Download the file for your system from the GitHub Releases page. Each release al
 
 - **Debian / Ubuntu:** `sudo apt install ./twm-bible-native_<version>-1_amd64.deb`, then open **TWM Bible** from the app menu.
 - **Other Linux:** `chmod +x TWM_Bible-<version>-x86_64.AppImage` and run it. Or unpack `twm-bible-native-<version>-linux-x86_64.tar.gz`, then run `./install.sh` inside it to install for your user (into `~/.local`, adds a menu entry), or `sudo ./install.sh /usr/local` for everyone. `./install.sh --uninstall` removes it. You can also just run `bin/twm-bible-native` without installing.
+- **Flatpak (any Linux):** see [Flatpak](#flatpak-experimental) below.
 - **Windows:** run `TWM-Bible-<version>-windows-x64-setup.exe`. It adds a Start Menu and desktop shortcut and an uninstaller. The installer is unsigned, so SmartScreen may ask you to confirm (More info → Run anyway). A portable zip is also provided.
 - **macOS (11+, Apple Silicon and Intel):** open the `.dmg` and drag **TWM Bible** to Applications. The app is not notarized, so the first time right-click it and choose **Open** (or run `xattr -dr com.apple.quarantine "/Applications/TWM Bible.app"`).
+
+## Flatpak (experimental)
+
+> ⚠️ **Experimental:** the Flatpak build is new and less tested than the .deb, AppImage and tarball. Please report problems on the Issues page.
+
+Download `TWM-Bible-<version>-x86_64.flatpak` from the Releases page, then:
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo   # runtime source
+flatpak install --user TWM-Bible-<version>-x86_64.flatpak
+flatpak run io.github.thunderbyrdgrok.TWMBible
+```
+
+Uninstall with `flatpak uninstall --user io.github.thunderbyrdgrok.TWMBible`. Inside the sandbox your settings, notes and study desk are kept in `~/.var/app/io.github.thunderbyrdgrok.TWMBible/.local/state/twm-bible-slint/` (separate from a .deb/AppImage install). Network access is enabled only for online word definitions; files are opened and saved through the desktop file-chooser portal. Playing the intro video needs a video player on the host (opened via the portal).
+
+**Packaging note:** the manifest lives in `packaging/flatpak/` (Freedesktop 26.08 runtime + rust-stable SDK extension, offline cargo build). After changing `Cargo.lock`, regenerate `cargo-sources.json` with [flatpak-cargo-generator](https://github.com/flatpak/flatpak-builder-tools/tree/master/cargo): `python3 flatpak-cargo-generator.py Cargo.lock -o packaging/flatpak/cargo-sources.json`. Build locally with `flatpak-builder --user --force-clean --repo=repo build-dir packaging/flatpak/io.github.thunderbyrdgrok.TWMBible.yml && flatpak build-bundle repo TWM-Bible.flatpak io.github.thunderbyrdgrok.TWMBible --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo`.
 
 ## Building release packages
 
@@ -48,7 +65,7 @@ Download the file for your system from the GitHub Releases page. Each release al
 - Windows: `cargo build --release`, then `makensis packaging\windows\installer.nsi`
 - macOS: `./packaging/macos/build-dmg.sh`
 
-Pushing a tag such as `v1.3.0` runs `.github/workflows/release.yml`, which builds all three and attaches them to a GitHub Release.
+Pushing a tag such as `v1.3.0` runs `.github/workflows/release.yml`, which builds all of them (including the Flatpak) and attaches them to a GitHub Release.
 
 ## Run from source
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.thunderbyrdgrok.TWMBible</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>TWM Bible</name>
+  <summary>Native desktop Bible reader</summary>
+  <developer id="io.github.thunderbyrdgrok"><name>Rocky (thunderbyrdgrok)</name></developer>
+  <description>
+    <p>TWM Bible is a fast native Bible reader built with Rust and Slint. It bundles the KJV, ASV, WEB, YLT, Darby, RV, Geneva and Douay-Rheims texts and supports notes, highlights, bookmarks, parallel compare and a study desk.</p>
+  </description>
+  <launchable type="desktop-id">io.github.thunderbyrdgrok.TWMBible.desktop</launchable>
+  <url type="homepage">https://github.com/thunderbyrdgrok/twm-bible-native</url>
+  <url type="bugtracker">https://github.com/thunderbyrdgrok/twm-bible-native/issues</url>
+  <content_rating type="oars-1.1"/>
+  <categories><category>Education</category><category>Literature</category></categories>
+  <releases>
+    <release version="1.3.0" date="2026-10-25"/>
+  </releases>
+</component>

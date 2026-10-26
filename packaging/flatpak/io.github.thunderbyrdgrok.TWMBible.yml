@@ -1,0 +1,47 @@
+# EXPERIMENTAL Flatpak manifest for TWM Bible.
+# Regenerate cargo-sources.json whenever Cargo.lock changes:
+#   python3 flatpak-cargo-generator.py ../../Cargo.lock -o cargo-sources.json
+# Build:  flatpak-builder --user --force-clean --repo=repo build-dir io.github.thunderbyrdgrok.TWMBible.yml
+#         flatpak build-bundle repo TWM-Bible.flatpak io.github.thunderbyrdgrok.TWMBible
+id: io.github.thunderbyrdgrok.TWMBible
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: twm-bible-native
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Word definitions are fetched online (dictionaryapi.dev / datamuse) via curl.
+  - --share=network
+  # Settings/notes go to $XDG_STATE_HOME = ~/.var/app/<id>/.local/state/twm-bible-slint (no host fs access needed).
+  # Import/export dialogs (rfd) use the xdg-desktop-portal file chooser.
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/twm-bible-native/cargo
+    CARGO_NET_OFFLINE: 'true'
+modules:
+  - name: twm-bible-native
+    buildsystem: simple
+    build-commands:
+      - cargo --offline fetch --manifest-path Cargo.toml
+      - cargo --offline build --release --locked
+      - install -Dm755 target/release/twm-bible-native -t /app/bin/
+      - install -Dm644 data/*.json -t /app/share/twm-bible-native/data/
+      - install -Dm644 assets/twmintro.mp4 -t /app/share/twm-bible-native/assets/
+      - install -Dm644 packaging/flatpak/io.github.thunderbyrdgrok.TWMBible.desktop -t /app/share/applications/
+      - install -Dm644 packaging/flatpak/io.github.thunderbyrdgrok.TWMBible.metainfo.xml -t /app/share/metainfo/
+      - install -Dm644 assets/icon-256.png /app/share/icons/hicolor/256x256/apps/io.github.thunderbyrdgrok.TWMBible.png
+      - install -Dm644 assets/icon-128.png /app/share/icons/hicolor/128x128/apps/io.github.thunderbyrdgrok.TWMBible.png
+      - install -Dm644 assets/icon-48.png /app/share/icons/hicolor/48x48/apps/io.github.thunderbyrdgrok.TWMBible.png
+      - install -Dm644 assets/icon.svg /app/share/icons/hicolor/scalable/apps/io.github.thunderbyrdgrok.TWMBible.svg
+      - install -Dm644 LICENSE -t /app/share/licenses/io.github.thunderbyrdgrok.TWMBible/
+    sources:
+      - type: dir
+        path: ../..
+        skip: [target, dist, packaging/flatpak/build-dir, packaging/flatpak/repo, packaging/flatpak/.flatpak-builder]
+      - cargo-sources.json

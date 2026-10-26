@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=TWM Bible
+GenericName=Bible
+Comment=Native Bible reader
+Exec=twm-bible-native
+Icon=io.github.thunderbyrdgrok.TWMBible
+StartupWMClass=twm-bible-native
+Terminal=false
+Categories=Education;Literature;
+Keywords=bible;kjv;scripture;twm;
